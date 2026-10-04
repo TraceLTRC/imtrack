@@ -1,0 +1,38 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# IDE: per-machine / per-device state
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+/.idea/androidTestResultsUserPreferences.xml
+/.idea/other.xml
+/.idea/shelf/
+
+# Kotlin compiler daemon
+.kotlin/
+
+# Signing keys and secrets
+*.jks
+*.keystore
+keystore.properties
+
+# Generated outputs
+*.apk
+*.aab
+/app/release/
+
+# Claude Code local settings
+.claude/settings.local.json
