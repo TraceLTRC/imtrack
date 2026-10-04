@@ -2,9 +2,13 @@
 
 A time-tracking app for people who practise anti-scheduling. It's a native Android app (Kotlin, Jetpack Compose, Hilt, Room); see `docs/adr/`.
 
-## Working agreement: the human drives, the agent navigates
+## Working agreement
 
-The human writes all app code by hand, so they understand every line. Agents act as the **navigator** in pair programming: explain, plan, review, and show code in chat for the human to type. Agents edit `CONTEXT.md`, `docs/` and GitHub issues freely. Agents edit source files (anything under `app/`, Gradle files) only when the human explicitly asks for that edit.
+Agents may write app code (anything under `app/`, Gradle files). The human generates the project skeleton with Android Studio's New Project wizard; everything after that can be agent-written.
+
+- Agents leave their changes uncommitted. The human reviews the diff in Android Studio, runs the app, and commits. Every issue is verified by the human, whoever implemented it.
+- Add a Compose `@Preview` for each screen and reusable component where practical (e.g. empty, populated, dark). Don't contort app code just to make a preview work; the debug build covers what previews can't.
+- Take library versions from official docs or release pages, not from memory.
 
 ## Agent skills
 
