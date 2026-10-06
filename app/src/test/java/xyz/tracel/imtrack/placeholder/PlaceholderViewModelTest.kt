@@ -1,28 +1,54 @@
 package xyz.tracel.imtrack.placeholder
 
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import xyz.tracel.imtrack.data.AppDatabase
+import xyz.tracel.imtrack.data.ProjectRepository
 import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class PlaceholderViewModelTest {
-    @Test
-    fun textShowsTodayFromInjectedClock() {
-        val clock = Clock.fixed(Instant.parse("2026-10-04T12:00:00Z"), ZoneOffset.UTC)
+    private lateinit var db: AppDatabase
+    private lateinit var viewModel: PlaceholderViewModel
 
-        val viewModel = PlaceholderViewModel(clock)
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        db = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            AppDatabase::class.java,
+        ).allowMainThreadQueries().build()
+        viewModel = PlaceholderViewModel(ProjectRepository(db.projectDao(), Clock.systemUTC()))
+    }
 
-        assertEquals("imtrack is wired up. Today is 2026-10-04.", viewModel.text.value)
+    @After
+    fun tearDown() {
+        db.close()
+        Dispatchers.resetMain()
     }
 
     @Test
-    fun todayUsesTheClockTimeZone() {
-        // 23:30 UTC on Oct 4 is already Oct 5 in Jakarta (UTC+7).
-        val clock = Clock.fixed(Instant.parse("2026-10-04T23:30:00Z"), ZoneOffset.ofHours(7))
+    fun insertingSampleProjectsRaisesTheCount() = runTest {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.projectCount.collect {} }
 
-        val viewModel = PlaceholderViewModel(clock)
+        viewModel.insertSampleProject()
+        viewModel.insertSampleProject()
 
-        assertEquals("imtrack is wired up. Today is 2026-10-05.", viewModel.text.value)
+        assertEquals(2, viewModel.projectCount.first { it == 2 })
     }
 }

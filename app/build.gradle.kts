@@ -39,6 +39,15 @@ android {
     }
 }
 
+// Robolectric doesn't start on JDK 25, so only the test JVM runs on JDK 21.
+tasks.withType<Test>().configureEach {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    // From https://robolectric.org/getting-started/ (needed on JDK 17+).
+    jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
+}
+
 room {
     schemaDirectory("$projectDir/schemas")
 }
@@ -60,6 +69,9 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
