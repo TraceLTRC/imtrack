@@ -1,3 +1,37 @@
 <resources>
     <string name="app_name">imtrack</string>
+
+    <!-- Shell -->
+    <string name="tab_home">Home</string>
+    <string name="tab_history">History</string>
+    <string name="tab_stats">Stats</string>
+    <string name="more_options">More options</string>
+    <string name="back">Back</string>
+    <string name="menu_undo_last_session">Undo last Session</string>
+    <string name="menu_projects">Projects</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_projects">Projects</string>
+    <string name="title_settings">Settings</string>
+    <string name="coming_soon">Coming in a later update.</string>
+
+    <!-- Projects -->
+    <string name="project_name">Project name</string>
+    <string name="colour">Colour</string>
+    <string name="colour_swatch">Colour %1$d of 8</string>
+    <string name="new_project">New Project</string>
+    <string name="edit_project">Edit Project</string>
+    <string name="save">Save</string>
+    <string name="archive">Archive</string>
+    <string name="unarchive">Unarchive</string>
+    <string name="archived_section">Archived</string>
+    <string name="archived_snackbar">Archived %1$s</string>
+    <string name="unarchived_snackbar">Unarchived %1$s</string>
+
+    <!-- Home -->
+    <string name="home_projects_section">Projects</string>
+    <string name="home_first_launch_heading">What do you put time into?</string>
+    <string name="home_first_launch_body">Add your first Project, such as Guitar or 3D modelling. Then tap + to log time, or ▶ to start the Stopwatch.</string>
+    <string name="home_all_archived_heading">All your Projects are archived</string>
+    <string name="home_all_archived_body">Add a new Project to keep tracking. To bring an old one back, unarchive it from ⋮ → Projects.</string>
+    <string name="add_project">Add Project</string>
 </resources>
