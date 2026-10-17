@@ -27,7 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,14 +45,14 @@ fun ProjectsScreen(onBack: () -> Unit, viewModel: ProjectsViewModel = hiltViewMo
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val underAMinute by viewModel.underAMinute.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
+    val resources = LocalResources.current
     LaunchedEffect(viewModel) {
         viewModel.messages.collect { message ->
             val text = when (message) {
-                is ProjectsMessage.Archived -> context.getString(R.string.archived_snackbar, message.name)
-                is ProjectsMessage.Unarchived -> context.getString(R.string.unarchived_snackbar, message.name)
+                is ProjectsMessage.Archived -> resources.getString(R.string.archived_snackbar, message.name)
+                is ProjectsMessage.Unarchived -> resources.getString(R.string.unarchived_snackbar, message.name)
                 is ProjectsMessage.Logged ->
-                    loggedText(context.resources, message.durationSeconds, message.projectName, message.day)
+                    loggedText(resources, message.durationSeconds, message.projectName, message.day)
             }
             snackbarHostState.showSnackbar(text)
         }

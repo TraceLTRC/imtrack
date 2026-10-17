@@ -52,6 +52,7 @@
     </plurals>
     <string name="discard">Discard</string>
     <string name="keep">Keep</string>
+    <string name="stopwatch_channel">Stopwatch</string>
 
     <!-- Sessions -->
     <string name="day_today">Today</string>
@@ -74,6 +75,9 @@
     <string name="session_deleted_snackbar">Session deleted</string>
 
     <!-- Settings -->
+    <string name="settings_stopwatch_section">Stopwatch</string>
+    <string name="settings_notifications_off">Notifications are off</string>
+    <string name="settings_notifications_off_text">The Stopwatch notification and Reminder need them</string>
     <string name="settings_backup_section">Backup</string>
     <string name="settings_export">Export</string>
     <string name="settings_export_text">Save all Projects and Sessions to a JSON file</string>

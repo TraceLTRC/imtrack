@@ -1,7 +1,9 @@
 package xyz.tracel.imtrack.settings
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.annotation.StringRes
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,8 +30,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -37,9 +42,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import xyz.tracel.imtrack.R
 import xyz.tracel.imtrack.backup.BackupError
+import xyz.tracel.imtrack.stopwatch.notificationsAllowed
 import xyz.tracel.imtrack.ui.theme.ImtrackTheme
 
 /** Any JSON document; some file managers label `.json` files as plain binary. */
@@ -62,7 +69,22 @@ fun SettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel:
         }
     }
 
+    val context = LocalContext.current
+    var notificationsOff by remember { mutableStateOf(!notificationsAllowed(context)) }
+    // Back from system settings, the row may need to go.
+    LifecycleResumeEffect(context) {
+        notificationsOff = !notificationsAllowed(context)
+        onPauseOrDispose {}
+    }
+
     SettingsScreen(
+        notificationsOff = notificationsOff,
+        onOpenNotificationSettings = {
+            context.startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
+            )
+        },
         onBack = onBack,
         onExport = { exportLauncher.launch(viewModel.exportFileName()) },
         onImport = { importLauncher.launch(importTypes) },
@@ -77,6 +99,8 @@ fun SettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel:
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    notificationsOff: Boolean,
+    onOpenNotificationSettings: () -> Unit,
     onBack: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
@@ -102,17 +126,26 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
-            // The Stopwatch section's `Reminder after` row goes here (#4).
-            Text(
-                stringResource(R.string.settings_backup_section),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+            // The Stopwatch section's `Reminder after` row joins this section in #16.
+            if (notificationsOff) {
+                SectionLabel(R.string.settings_stopwatch_section)
+                SettingsRow(R.string.settings_notifications_off, R.string.settings_notifications_off_text, onOpenNotificationSettings)
+            }
+            SectionLabel(R.string.settings_backup_section)
             SettingsRow(R.string.settings_export, R.string.settings_export_text, onExport)
             SettingsRow(R.string.settings_import, R.string.settings_import_text, onImport)
         }
     }
+}
+
+@Composable
+private fun SectionLabel(@StringRes text: Int) {
+    Text(
+        stringResource(text),
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
 
 @Composable
@@ -185,7 +218,16 @@ private fun BackupError.text(resources: Resources): String = when (this) {
 @Composable
 private fun SettingsScreenPreview() {
     ImtrackTheme {
-        SettingsScreen(onBack = {}, onExport = {}, onImport = {})
+        SettingsScreen(notificationsOff = false, onOpenNotificationSettings = {}, onBack = {}, onExport = {}, onImport = {})
+    }
+}
+
+@Preview(name = "Notifications off", showBackground = true)
+@Preview(name = "Notifications off, dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun SettingsNotificationsOffPreview() {
+    ImtrackTheme {
+        SettingsScreen(notificationsOff = true, onOpenNotificationSettings = {}, onBack = {}, onExport = {}, onImport = {})
     }
 }
 

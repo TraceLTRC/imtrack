@@ -31,6 +31,7 @@ import xyz.tracel.imtrack.data.ProjectRepository
 import xyz.tracel.imtrack.data.SessionRepository
 import xyz.tracel.imtrack.data.StopwatchRepository
 import xyz.tracel.imtrack.stopwatch.InAppStopwatch
+import xyz.tracel.imtrack.stopwatch.NotificationPermissionPrompt
 import xyz.tracel.imtrack.projects.ProjectColors
 import xyz.tracel.imtrack.sessions.DayLabel
 import java.time.Instant
@@ -355,7 +356,15 @@ class HomeViewModelTest {
     }
 
     private fun newViewModel() =
-        HomeViewModel(projects, sessions, stopwatch, InAppStopwatch(stopwatch, projects, clock), clock, Random(0))
+        HomeViewModel(
+            projects,
+            sessions,
+            stopwatch,
+            InAppStopwatch(stopwatch, projects, clock),
+            NotificationPermissionPrompt(ApplicationProvider.getApplicationContext()),
+            clock,
+            Random(0),
+        )
 
     /** Guitar and Reading, in that order. */
     private suspend fun twoProjects(): Pair<Project, Project> {

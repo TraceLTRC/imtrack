@@ -1,6 +1,9 @@
 package xyz.tracel.imtrack.home
 
+import android.Manifest
 import android.content.res.Configuration
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +57,7 @@ import xyz.tracel.imtrack.sessions.formatDuration
 import xyz.tracel.imtrack.sessions.loggedText
 import xyz.tracel.imtrack.stopwatch.RunningStopwatchCard
 import xyz.tracel.imtrack.stopwatch.UnderAMinuteDialog
+import xyz.tracel.imtrack.stopwatch.needsNotificationPermission
 import xyz.tracel.imtrack.ui.theme.ImtrackTheme
 import java.time.LocalDate
 
@@ -61,25 +66,34 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltVie
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val resources = LocalResources.current
     LaunchedEffect(viewModel) {
         viewModel.messages.collect { message ->
             val text = when (message) {
                 is HomeMessage.Logged ->
-                    loggedText(context.resources, message.durationSeconds, message.projectName, message.day)
+                    loggedText(resources, message.durationSeconds, message.projectName, message.day)
                 is HomeMessage.Switched ->
-                    context.getString(R.string.switched_snackbar, message.stoppedName, message.startedName)
+                    resources.getString(R.string.switched_snackbar, message.stoppedName, message.startedName)
             }
             snackbarHostState.showSnackbar(text)
         }
     }
 
     val underAMinute by viewModel.underAMinute.collectAsStateWithLifecycle()
+    // The Stopwatch starts whatever the answer; MainActivity reconciles the notification on resume.
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    val start = { project: Project ->
+        if (needsNotificationPermission(context) && viewModel.shouldAskForNotifications()) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        viewModel.start(project)
+    }
     Box(modifier) {
         HomeScreen(
             uiState = uiState,
             onAddProject = viewModel::addProject,
             onLog = viewModel::openLog,
-            onStart = viewModel::start,
+            onStart = start,
             onStop = viewModel::stop,
             now = viewModel::nowMillis,
         )

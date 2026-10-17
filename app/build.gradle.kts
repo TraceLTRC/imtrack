@@ -38,6 +38,10 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // Robolectric tests that build notifications read the app's strings and drawables.
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 // Robolectric doesn't start on JDK 25, so only the test JVM runs on JDK 21.

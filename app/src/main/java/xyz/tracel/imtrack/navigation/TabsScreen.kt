@@ -21,7 +21,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,11 +51,27 @@ import xyz.tracel.imtrack.sessions.formatDuration
  */
 @Composable
 fun TabsScreen(
+    homeRequest: Int,
     onOpenProjects: () -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: TabsViewModel = hiltViewModel(),
 ) {
     val navController = rememberNavController()
+    val navigateTo = { route: Any ->
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+    // A tap on the Stopwatch notification; each request is handled once, rotation included.
+    var handledHomeRequest by rememberSaveable { mutableIntStateOf(homeRequest) }
+    LaunchedEffect(homeRequest) {
+        if (homeRequest != handledHomeRequest) {
+            handledHomeRequest = homeRequest
+            navigateTo(HomeRoute)
+        }
+    }
     val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
@@ -89,13 +107,7 @@ fun TabsScreen(
                 Tab.entries.forEach { tab ->
                     NavigationBarItem(
                         selected = tab == currentTab,
-                        onClick = {
-                            navController.navigate(tab.route) {
-                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        onClick = { navigateTo(tab.route) },
                         icon = { Icon(painterResource(tab.icon), contentDescription = null) },
                         label = { Text(stringResource(tab.label)) },
                     )

@@ -32,6 +32,7 @@ import xyz.tracel.imtrack.sessions.todayFlow
 import xyz.tracel.imtrack.stopwatch.InAppStop
 import xyz.tracel.imtrack.stopwatch.InAppStopwatch
 import xyz.tracel.imtrack.stopwatch.LoggedSession
+import xyz.tracel.imtrack.stopwatch.NotificationPermissionPrompt
 import xyz.tracel.imtrack.stopwatch.UnderAMinute
 import xyz.tracel.imtrack.stopwatch.UnderAMinuteChoice
 import java.time.Clock
@@ -82,6 +83,7 @@ class HomeViewModel @Inject constructor(
     private val sessionRepository: SessionRepository,
     private val stopwatchRepository: StopwatchRepository,
     private val inAppStopwatch: InAppStopwatch,
+    private val notificationPrompt: NotificationPermissionPrompt,
     private val clock: Clock,
     private val random: Random,
 ) : ViewModel() {
@@ -152,6 +154,9 @@ class HomeViewModel @Inject constructor(
             _messages.send(HomeMessage.Logged(seconds, project.name, dayLabel(date, today)))
         }
     }
+
+    /** Whether to ask for the notification permission now: only once, on the first ▶ that needs it. */
+    fun shouldAskForNotifications(): Boolean = notificationPrompt.shouldAskOnce()
 
     /** The clock the running card ticks by, in epoch millis. */
     fun nowMillis(): Long = clock.millis()
