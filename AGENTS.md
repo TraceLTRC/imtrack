@@ -6,7 +6,7 @@ A time-tracking app for people who practise anti-scheduling. It's a native Andro
 
 Agents may write app code (anything under `app/`, Gradle files). The human generates the project skeleton with Android Studio's New Project wizard; everything after that can be agent-written.
 
-- Agents leave their changes uncommitted. The human reviews the diff in Android Studio, runs the app, and commits. Every issue is verified by the human, whoever implemented it.
+- Agents commit to the current branch as soon as an implementation is done (tests passing, review addressed). The human then verifies every issue in Android Studio (diff, previews, debug build), whoever implemented it.
 - Add a Compose `@Preview` for each screen and reusable component where practical (e.g. empty, populated, dark). Don't contort app code just to make a preview work; the debug build covers what previews can't.
 - Take library versions from official docs or release pages, not from memory.
 
