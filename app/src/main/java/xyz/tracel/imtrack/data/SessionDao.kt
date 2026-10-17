@@ -11,6 +11,17 @@ interface SessionDao {
     @Insert
     suspend fun insert(session: Session)
 
+    @Insert
+    suspend fun insertAll(sessions: List<Session>)
+
+    /** Every row, deleted ones too: for Export. */
+    @Query("SELECT * FROM session")
+    suspend fun getAll(): List<Session>
+
+    /** Hard delete; only Import uses it (ADR-0002). */
+    @Query("DELETE FROM session")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM session WHERE id = :id")
     suspend fun getById(id: String): Session?
 

@@ -59,4 +59,36 @@
     <string name="delete_session_text">%1$s of %2$s on %3$s will be removed from History and stats.</string>
     <string name="session_updated_snackbar">Session updated</string>
     <string name="session_deleted_snackbar">Session deleted</string>
+
+    <!-- Settings -->
+    <string name="settings_backup_section">Backup</string>
+    <string name="settings_export">Export</string>
+    <string name="settings_export_text">Save all Projects and Sessions to a JSON file</string>
+    <string name="settings_import">Import</string>
+    <string name="settings_import_text">Load a JSON file exported from imtrack</string>
+    <plurals name="project_count">
+        <item quantity="one">%1$d Project</item>
+        <item quantity="other">%1$d Projects</item>
+    </plurals>
+    <plurals name="session_count">
+        <item quantity="one">%1$d Session</item>
+        <item quantity="other">%1$d Sessions</item>
+    </plurals>
+    <string name="exported_snackbar">Exported %1$s and %2$s</string>
+    <string name="export_failed_snackbar">Export failed: %1$s</string>
+    <string name="imported_snackbar">Imported %1$s and %2$s</string>
+    <string name="import_failed_snackbar">Import failed: %1$s</string>
+    <string name="replace_all_title">Replace all data?</string>
+    <string name="replace_all_text">This deletes every Project and Session on this phone and replaces them with the %1$s and %2$s in the file.</string>
+    <string name="replace">Replace</string>
+    <string name="backup_error_unwritable">the file couldn\'t be written</string>
+    <string name="backup_error_failed">something went wrong</string>
+    <string name="backup_error_not_json">the file isn\'t valid JSON</string>
+    <string name="backup_error_not_a_backup">the file isn\'t an imtrack backup</string>
+    <string name="backup_error_unknown_version">unknown format version %1$s</string>
+    <string name="backup_error_missing_field">missing field %1$s</string>
+    <string name="backup_error_malformed">the file has data imtrack can\'t read</string>
+    <string name="backup_error_missing_project">a Session points at a missing Project</string>
+    <string name="backup_error_duplicate_id">two rows share an ID</string>
+    <string name="backup_error_bad_duration">a Session has no duration</string>
 </resources>

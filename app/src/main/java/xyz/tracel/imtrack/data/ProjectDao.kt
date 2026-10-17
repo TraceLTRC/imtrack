@@ -10,6 +10,17 @@ interface ProjectDao {
     @Insert
     suspend fun insert(project: Project)
 
+    @Insert
+    suspend fun insertAll(projects: List<Project>)
+
+    /** Every row, archived and deleted ones too: for Export. */
+    @Query("SELECT * FROM project")
+    suspend fun getAll(): List<Project>
+
+    /** Hard delete; only Import uses it (ADR-0002). */
+    @Query("DELETE FROM project")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM project WHERE id = :id")
     suspend fun getById(id: String): Project?
 
