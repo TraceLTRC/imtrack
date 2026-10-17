@@ -27,6 +27,15 @@ val PeriodKind.tabLabel: Int
         PeriodKind.Year -> R.string.period_year
     }
 
+/** Past Periods with nothing before the current Period: `Nothing before this week yet.` */
+@get:StringRes
+val PeriodKind.nothingBeforeLabel: Int
+    get() = when (this) {
+        PeriodKind.Week -> R.string.past_periods_empty_week
+        PeriodKind.Month -> R.string.past_periods_empty_month
+        PeriodKind.Year -> R.string.past_periods_empty_year
+    }
+
 /** The current Period's name on the total card: `This week`, `This month`, `This year`. */
 @get:StringRes
 val PeriodKind.currentLabel: Int

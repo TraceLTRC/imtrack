@@ -84,6 +84,9 @@ class SessionRepository @Inject constructor(
     fun observeDayTotalsBetween(from: LocalDate, to: LocalDate, projectId: String?): Flow<Map<LocalDate, Long>> =
         sessionDao.observeDayTotalsBetween(from, to, projectId).map { totals -> totals.associate { it.date to it.totalSeconds } }
 
+    /** Every day's live seconds per Project. */
+    fun observeDayProjectTotals(): Flow<List<DayProjectTotal>> = sessionDao.observeDayProjectTotals()
+
     /** Each Project's latest live Session, for Home's row order. */
     fun observeLatestPerProject(): Flow<List<ProjectActivity>> = sessionDao.observeLatestPerProject()
 }

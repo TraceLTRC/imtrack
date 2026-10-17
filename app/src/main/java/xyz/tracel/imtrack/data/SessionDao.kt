@@ -65,6 +65,16 @@ interface SessionDao {
     )
     fun observeDayTotalsBetween(from: LocalDate, to: LocalDate, projectId: String?): Flow<List<DayTotal>>
 
+    /** Every day's live seconds per Project, for Past Periods. */
+    @Query(
+        """
+        SELECT date, projectId, SUM(durationSeconds) AS seconds FROM session
+        WHERE deletedAt IS NULL
+        GROUP BY date, projectId
+        """,
+    )
+    fun observeDayProjectTotals(): Flow<List<DayProjectTotal>>
+
     /** Each Project's latest live Session; Projects with none are left out. */
     @Query(
         """
@@ -104,3 +114,6 @@ interface SessionDao {
 data class ProjectTotal(val projectId: String, val totalSeconds: Long)
 
 data class DayTotal(val date: LocalDate, val totalSeconds: Long)
+
+/** A day's live seconds for one Project. */
+data class DayProjectTotal(val date: LocalDate, val projectId: String, val seconds: Long)

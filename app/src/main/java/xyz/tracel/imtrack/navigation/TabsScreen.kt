@@ -50,6 +50,7 @@ import xyz.tracel.imtrack.stats.StatsScreen
 @Composable
 fun TabsScreen(
     homeRequest: Int,
+    onOpenPastPeriods: () -> Unit,
     onOpenProjects: () -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: TabsViewModel = hiltViewModel(),
@@ -96,6 +97,7 @@ fun TabsScreen(
                 title = stringResource(currentTab.title),
                 canUndo = canUndo,
                 onUndoLastSession = viewModel::undoLastSession,
+                onOpenPastPeriods = onOpenPastPeriods,
                 onOpenProjects = onOpenProjects,
                 onOpenSettings = onOpenSettings,
             )
@@ -138,6 +140,7 @@ private fun TabTopBar(
     title: String,
     canUndo: Boolean,
     onUndoLastSession: () -> Unit,
+    onOpenPastPeriods: () -> Unit,
     onOpenProjects: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -159,6 +162,13 @@ private fun TabTopBar(
                         enabled = canUndo,
                     )
                     HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.menu_past_periods)) },
+                        onClick = {
+                            menuOpen = false
+                            onOpenPastPeriods()
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_projects)) },
                         onClick = {

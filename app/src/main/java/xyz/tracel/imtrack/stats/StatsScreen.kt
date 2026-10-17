@@ -219,17 +219,22 @@ fun ByProjectRows(rows: List<ByProjectRow>, modifier: Modifier = Modifier) {
                     )
                 }
                 Spacer(Modifier.height(4.dp))
-                Box(
-                    Modifier
-                        // Lines up with the name, after the marker.
-                        .padding(start = 22.dp)
-                        .fillMaxWidth(row.seconds.toFloat() / top)
-                        .height(6.dp)
-                        .background(Color(row.project.color), RoundedCornerShape(3.dp)),
-                )
+                // Lines up with the name, after the marker.
+                DurationBar(row.seconds.toFloat() / top, Color(row.project.color), Modifier.padding(start = 22.dp))
             }
         }
     }
+}
+
+/** A 6 dp bar, [fraction] of the width, for a total scaled to the largest in its list. */
+@Composable
+fun DurationBar(fraction: Float, color: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .fillMaxWidth(fraction)
+            .height(6.dp)
+            .background(color, RoundedCornerShape(3.dp)),
+    )
 }
 
 @Composable

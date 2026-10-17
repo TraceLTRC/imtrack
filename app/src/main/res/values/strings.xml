@@ -8,8 +8,10 @@
     <string name="more_options">More options</string>
     <string name="back">Back</string>
     <string name="menu_undo_last_session">Undo last Session</string>
+    <string name="menu_past_periods">Past Periods</string>
     <string name="menu_projects">Projects</string>
     <string name="menu_settings">Settings</string>
+    <string name="title_past_periods">Past Periods</string>
     <string name="title_projects">Projects</string>
     <string name="title_settings">Settings</string>
     <string name="removed_snackbar">Removed %1$s · %2$s</string>
@@ -97,6 +99,11 @@
     <string name="stats_streak">Streak</string>
     <string name="stats_longest">Longest</string>
     <string name="by_project">By Project</string>
+    <string name="expanded">Expanded</string>
+    <string name="collapsed">Collapsed</string>
+    <string name="past_periods_empty_week">Nothing before this week yet.</string>
+    <string name="past_periods_empty_month">Nothing before this month yet.</string>
+    <string name="past_periods_empty_year">Nothing before this year yet.</string>
     <string name="heatmap_title">Last 6 months</string>
     <string name="heatmap_description">Heatmap of the last 6 months</string>
     <string name="heatmap_description_filtered">Heatmap of the last 6 months for %1$s</string>

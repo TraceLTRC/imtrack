@@ -25,9 +25,6 @@ import javax.inject.Inject
 /** The previous Period's total at the same point, shown only when it's more than zero. */
 data class Comparison(val previousSeconds: Long, val previousLabel: PeriodLabel)
 
-/** A By Project row: a Project with time in the Period so far. */
-data class ByProjectRow(val project: Project, val seconds: Long)
-
 /** The Heatmap: its grid and each day's total seconds, for [projectId] (null: All Projects). */
 data class HeatmapDays(val layout: HeatmapLayout, val seconds: Map<LocalDate, Long>, val projectId: String? = null)
 
@@ -131,8 +128,3 @@ class StatsViewModel @Inject constructor(
         const val KeyProject = "projectId"
     }
 }
-
-/** Projects with time, most first (then A–Z); archived ones included. */
-private fun byProject(seconds: Map<String, Long>, projects: List<Project>): List<ByProjectRow> =
-    projects.mapNotNull { project -> seconds[project.id]?.takeIf { it > 0L }?.let { ByProjectRow(project, it) } }
-        .sortedWith(compareByDescending<ByProjectRow> { it.seconds }.thenBy(String.CASE_INSENSITIVE_ORDER) { it.project.name })

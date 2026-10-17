@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import xyz.tracel.imtrack.projects.ProjectsScreen
 import xyz.tracel.imtrack.settings.SettingsScreen
+import xyz.tracel.imtrack.stats.PastPeriodsScreen
 
 /**
  * Top-level navigation. The tabs are one destination that owns the top bar and bottom bar,
@@ -51,11 +52,13 @@ fun ImtrackApp(openHomeRequests: Flow<Unit> = emptyFlow()) {
         composable<TabsRoute> {
             TabsScreen(
                 homeRequest = homeRequest,
+                onOpenPastPeriods = { navController.navigate(PastPeriodsRoute) },
                 onOpenProjects = { navController.navigate(ProjectsRoute) },
                 onOpenSettings = { navController.navigate(SettingsRoute) },
             )
         }
         // dropUnlessResumed: a second tap during the exit transition must not pop the tabs too.
+        composable<PastPeriodsRoute> { PastPeriodsScreen(onBack = dropUnlessResumed { navController.popBackStack() }) }
         composable<ProjectsRoute> { ProjectsScreen(onBack = dropUnlessResumed { navController.popBackStack() }) }
         composable<SettingsRoute> { SettingsScreen(onBack = dropUnlessResumed { navController.popBackStack() }) }
     }

@@ -9,6 +9,7 @@ import xyz.tracel.imtrack.R
 @Serializable data object HomeRoute
 @Serializable data object HistoryRoute
 @Serializable data object StatsRoute
+@Serializable data object PastPeriodsRoute
 @Serializable data object ProjectsRoute
 @Serializable data object SettingsRoute
 
