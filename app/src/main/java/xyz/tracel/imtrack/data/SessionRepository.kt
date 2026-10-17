@@ -69,6 +69,9 @@ class SessionRepository @Inject constructor(
     /** Every live Session, in no particular order. */
     fun observeLive(): Flow<List<Session>> = sessionDao.observeLive()
 
+    /** Every day with more than zero time across all Projects. */
+    fun observeDaysWithTime(): Flow<Set<LocalDate>> = sessionDao.observeDaysWithTime().map { it.toSet() }
+
     /** Total seconds of live Sessions on [date], by Project ID. */
     fun observeTotalsOn(date: LocalDate): Flow<Map<String, Long>> =
         sessionDao.observeTotalsOn(date).map { totals -> totals.associate { it.projectId to it.totalSeconds } }

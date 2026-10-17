@@ -30,6 +30,7 @@ import xyz.tracel.imtrack.data.Project
 import xyz.tracel.imtrack.data.ProjectRepository
 import xyz.tracel.imtrack.data.SessionRepository
 import xyz.tracel.imtrack.data.StopwatchRepository
+import xyz.tracel.imtrack.stats.StreakRepository
 import xyz.tracel.imtrack.stopwatch.InAppStopwatch
 import xyz.tracel.imtrack.stopwatch.NotificationPermissionPrompt
 import xyz.tracel.imtrack.projects.ProjectColors
@@ -207,6 +208,20 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun theStreakTileCountsDaysAndUpdatesLive() = runTest {
+        collectState()
+        val (guitar, _) = twoProjects()
+        assertEquals(0, projectsState { true }.streakDays)
+        sessions.log(guitar.id, today.minusDays(1), 60L)
+        sessions.log(guitar.id, today.minusDays(2), 60L)
+
+        assertEquals(2, projectsState { it.streakDays == 2 }.streakDays)
+
+        sessions.log(guitar.id, today, 60L)
+        assertEquals(3, projectsState { it.streakDays == 3 }.streakDays)
+    }
+
+    @Test
     fun startingShowsTheRunningCardAndMarksTheRow() = runTest {
         collectState()
         val (guitar, _) = twoProjects()
@@ -359,6 +374,7 @@ class HomeViewModelTest {
         HomeViewModel(
             projects,
             sessions,
+            StreakRepository(sessions, clock),
             stopwatch,
             InAppStopwatch(stopwatch, projects, clock),
             NotificationPermissionPrompt(ApplicationProvider.getApplicationContext()),

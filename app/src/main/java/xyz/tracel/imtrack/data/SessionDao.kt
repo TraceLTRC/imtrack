@@ -59,6 +59,10 @@ interface SessionDao {
     @Query("SELECT * FROM session WHERE deletedAt IS NULL")
     fun observeLive(): Flow<List<Session>>
 
+    /** Every day whose live Sessions add up to more than zero, archived Projects included. */
+    @Query("SELECT date FROM session WHERE deletedAt IS NULL GROUP BY date HAVING SUM(durationSeconds) > 0")
+    fun observeDaysWithTime(): Flow<List<LocalDate>>
+
     /** Edits a live Session; a deleted one stays as it was. */
     @Query(
         """

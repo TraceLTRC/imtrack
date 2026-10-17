@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -41,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -185,8 +185,11 @@ private fun HomeProjects(
                     value = formatDuration(state.todaySeconds),
                     modifier = Modifier.weight(1f),
                 )
-                // The Streak tile goes here (#3).
-                Spacer(Modifier.weight(1f))
+                SummaryTile(
+                    label = stringResource(R.string.home_streak_tile),
+                    value = pluralStringResource(R.plurals.streak_days, state.streakDays, state.streakDays),
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
         state.running?.let { running ->
@@ -318,6 +321,7 @@ private fun HomePopulatedPreview() {
     val state = HomeUiState.Projects(
         today = LocalDate.of(2026, 10, 4),
         todaySeconds = rows.sumOf { it.todaySeconds },
+        streakDays = 12,
         rows = rows,
     )
     ImtrackTheme {
@@ -339,12 +343,31 @@ private fun HomeRunningPreview() {
     val state = HomeUiState.Projects(
         today = LocalDate.of(2026, 10, 4),
         todaySeconds = 1_800L,
+        streakDays = 1,
         rows = rows,
         running = RunningCard(rows.first().project, startedAt = 0L),
     )
     ImtrackTheme {
         Surface {
             HomeScreen(state, onAddProject = { _, _ -> }, onLog = {}, onStart = {}, onStop = {}, now = { 754_000L })
+        }
+    }
+}
+
+@Preview(name = "No Streak yet", showBackground = true)
+@Preview(name = "No Streak yet, dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun HomeNoStreakPreview() {
+    val project = Project("guitar", "Guitar", ProjectColors[2], false, createdAt = 0L, updatedAt = 0L, deletedAt = null)
+    val state = HomeUiState.Projects(
+        today = LocalDate.of(2026, 10, 4),
+        todaySeconds = 0L,
+        streakDays = 0,
+        rows = listOf(HomeRow(project, todaySeconds = 0L)),
+    )
+    ImtrackTheme {
+        Surface {
+            HomeScreen(state, onAddProject = { _, _ -> }, onLog = {}, onStart = {}, onStop = {}, now = { 0L })
         }
     }
 }

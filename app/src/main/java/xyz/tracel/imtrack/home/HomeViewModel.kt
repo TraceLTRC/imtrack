@@ -29,6 +29,7 @@ import xyz.tracel.imtrack.sessions.DayLabel
 import xyz.tracel.imtrack.sessions.dayLabel
 import xyz.tracel.imtrack.sessions.isValidMinutes
 import xyz.tracel.imtrack.sessions.todayFlow
+import xyz.tracel.imtrack.stats.StreakRepository
 import xyz.tracel.imtrack.stopwatch.InAppStop
 import xyz.tracel.imtrack.stopwatch.InAppStopwatch
 import xyz.tracel.imtrack.stopwatch.LoggedSession
@@ -64,6 +65,7 @@ sealed interface HomeUiState {
     data class Projects(
         val today: LocalDate,
         val todaySeconds: Long,
+        val streakDays: Int,
         val rows: List<HomeRow>,
         val running: RunningCard? = null,
         val logSheet: Project? = null,
@@ -81,6 +83,7 @@ sealed interface HomeMessage {
 class HomeViewModel @Inject constructor(
     private val projectRepository: ProjectRepository,
     private val sessionRepository: SessionRepository,
+    private val streakRepository: StreakRepository,
     private val stopwatchRepository: StopwatchRepository,
     private val inAppStopwatch: InAppStopwatch,
     private val notificationPrompt: NotificationPermissionPrompt,
@@ -101,19 +104,27 @@ class HomeViewModel @Inject constructor(
         sessionRepository.observeTotalsOn(today).map { today to it }
     }
 
+    /** Today's date and totals with the Streak: one flow, so Home's state stays a single combine. */
+    private data class Summary(val today: LocalDate, val totals: Map<String, Long>, val streakDays: Int)
+
+    private val summary = combine(todayTotals, streakRepository.observe()) { (today, totals), streak ->
+        Summary(today, totals, streak.current)
+    }
+
     val uiState: StateFlow<HomeUiState> = combine(
         projectRepository.observeAll(),
-        todayTotals,
+        summary,
         sessionRepository.observeLatestPerProject(),
         stopwatchRepository.observeRunning(),
         logSheet,
-    ) { all, (today, totals), latest, running, logSheet ->
+    ) { all, (today, totals, streakDays), latest, running, logSheet ->
         val active = sortForHome(all, latest)
         when {
             active.isNotEmpty() -> HomeUiState.Projects(
                 today = today,
                 // Archived Projects' Sessions still count towards today.
                 todaySeconds = totals.values.sum(),
+                streakDays = streakDays,
                 rows = active.map {
                     HomeRow(it, todaySeconds = totals[it.id] ?: 0L, running = it.id == running?.projectId)
                 },

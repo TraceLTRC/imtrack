@@ -36,6 +36,11 @@
     <string name="home_all_archived_body">Add a new Project to keep tracking. To bring an old one back, unarchive it from ⋮ → Projects.</string>
     <string name="add_project">Add Project</string>
     <string name="home_today_tile">Today</string>
+    <string name="home_streak_tile">Streak</string>
+    <plurals name="streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="home_today_subtitle">%1$s today</string>
     <string name="home_nothing_today">Nothing today</string>
     <string name="log_project">Log %1$s</string>
