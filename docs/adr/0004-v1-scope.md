@@ -5,6 +5,6 @@ v1 covers Projects, Sessions (logging after the fact plus the Stopwatch with its
 - **Media and catalog lookups (AniList etc.) and importing history from the Discord bot**: Japanese immersion stays in the Discord bot, which already covers it. Media needs its own design pass.
 - **Home-screen widget and Quick Settings tile**: nice ways to reach the app faster, but the ongoing notification covers the core need. They have their own design topic.
 - **Sync, accounts and a PC client**: built only when actually needed; ADR-0002 keeps the schema ready for them.
-- **Personal records and charts**: the second wave of rewards, after the Stats & rewards design settles the basics.
+- **Personal records and charts**: the second wave of rewards, after the Stats & rewards design settles the basics. The one exception is the Longest Streak, which is in v1, shown next to the current Streak (#3).
 - **Notes on Sessions**: logging stays at two fields (Project, minutes) to keep it effortless.
 - **Anything social** (leaderboards, friends): anti-scheduling is Self-comparison. This one is likely out permanently, not just for v1.

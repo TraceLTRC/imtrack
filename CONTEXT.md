@@ -36,4 +36,17 @@ A single notification shown once a Stopwatch has run for a set number of hours (
 _Avoid_: Alert, Cap, Timeout
 
 **Streak**:
-The number of consecutive days with more than zero minutes tracked, counted across all Projects together. There are no per-Project streaks.
+The number of consecutive days with more than zero minutes tracked, counted across all Projects together. There are no per-Project streaks and no rest days: a day with zero minutes ends it. A day with nothing tracked *yet* doesn't break it: until the day ends, the Streak counts up to yesterday, and the app never warns that it's at risk.
+_Avoid_: Chain, Run
+
+**Longest Streak**:
+The highest Streak ever reached, shown next to the current one.
+
+**Period**:
+A calendar week, month or year that totals are added up over. Weeks run Monday to Sunday.
+
+**Comparison**:
+A Period's total set against the previous Period's total at the same point: on a Wednesday, this week so far is compared with last week's Monday to Wednesday, and 1–7 October with 1–7 September. A finished Period is compared with the whole previous Period. When the previous Period has no time, there is no Comparison.
+
+**Heatmap**:
+A grid of days coloured by how much time was tracked on each, over the last six months. The colour steps are fixed minute amounts, so a day's colour never changes as your habits change.
