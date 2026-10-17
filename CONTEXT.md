@@ -28,8 +28,12 @@ _Avoid_: Entry, Time entry, Log (as a noun)
 To record a Session after the fact by stating its duration, without having run the Stopwatch.
 
 **Stopwatch**:
-The live timer that produces a Session when stopped. It is a convenience: logging after the fact is the primary way to record time. At most one Stopwatch runs at a time; starting one for another Project stops the current one. It has no pause, because stopping and starting again just creates another Session. Stopping it before one minute asks whether to discard or keep the Session.
+The live timer that produces a Session when stopped. It is a convenience: logging after the fact is the primary way to record time. At most one Stopwatch runs at a time; starting one for another Project stops the current one. It has no pause, because stopping and starting again just creates another Session. Stopping it in the app before one minute asks whether to discard or keep the Session; stopping it from outside the app (the notification's Stop, or swiping the notification away) always keeps it.
 _Avoid_: Timer (ambiguous with countdowns)
+
+**Reminder**:
+A single notification shown once a Stopwatch has run for a set number of hours (default 4), asking whether you're still going. It never stops the Stopwatch on its own.
+_Avoid_: Alert, Cap, Timeout
 
 **Streak**:
 The number of consecutive days with more than zero minutes tracked, counted across all Projects together. There are no per-Project streaks.

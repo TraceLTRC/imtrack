@@ -5,3 +5,7 @@ The phone is the source of truth. All data lives in on-device SQLite (via Room) 
 ## Exception: Import
 
 JSON Export writes every row, including soft-deleted ones. Import replaces all data: in one transaction it hard-deletes every row and inserts the file's rows unchanged (same IDs, timestamps and `deletedAt`). This is the only hard delete. It is a restore from backup rather than a user deleting something, and the file still carries every deletion marker.
+
+## Exception: the running Stopwatch
+
+The running Stopwatch is a single device-local row in Room, not a synced record: it has no UUID identity, updated-at or soft delete, is never exported, and won't sync. It lives in Room rather than DataStore so that stopping can delete it and insert the Session in one transaction, which keeps a Stop from the notification and one from the app from both saving a Session.
