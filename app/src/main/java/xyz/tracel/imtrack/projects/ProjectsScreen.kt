@@ -36,11 +36,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import xyz.tracel.imtrack.R
 import xyz.tracel.imtrack.data.Project
+import xyz.tracel.imtrack.sessions.loggedText
+import xyz.tracel.imtrack.stopwatch.UnderAMinuteDialog
 import xyz.tracel.imtrack.ui.theme.ImtrackTheme
 
 @Composable
 fun ProjectsScreen(onBack: () -> Unit, viewModel: ProjectsViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val underAMinute by viewModel.underAMinute.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     LaunchedEffect(viewModel) {
@@ -48,6 +51,8 @@ fun ProjectsScreen(onBack: () -> Unit, viewModel: ProjectsViewModel = hiltViewMo
             val text = when (message) {
                 is ProjectsMessage.Archived -> context.getString(R.string.archived_snackbar, message.name)
                 is ProjectsMessage.Unarchived -> context.getString(R.string.unarchived_snackbar, message.name)
+                is ProjectsMessage.Logged ->
+                    loggedText(context.resources, message.durationSeconds, message.projectName, message.day)
             }
             snackbarHostState.showSnackbar(text)
         }
@@ -67,6 +72,9 @@ fun ProjectsScreen(onBack: () -> Unit, viewModel: ProjectsViewModel = hiltViewMo
             onToggleArchived = viewModel::toggleArchived,
             onDismiss = viewModel::dismissSheet,
         )
+    }
+    underAMinute?.let {
+        UnderAMinuteDialog(it, onKeep = viewModel::keepUnderAMinute, onDiscard = viewModel::discardUnderAMinute)
     }
 }
 

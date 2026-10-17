@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -48,9 +49,10 @@ import xyz.tracel.imtrack.projects.ColourPicker
 import xyz.tracel.imtrack.projects.ProjectColors
 import xyz.tracel.imtrack.projects.ProjectMarker
 import xyz.tracel.imtrack.projects.ProjectNameField
-import xyz.tracel.imtrack.sessions.DayLabel
 import xyz.tracel.imtrack.sessions.formatDuration
-import xyz.tracel.imtrack.sessions.text
+import xyz.tracel.imtrack.sessions.loggedText
+import xyz.tracel.imtrack.stopwatch.RunningStopwatchCard
+import xyz.tracel.imtrack.stopwatch.UnderAMinuteDialog
 import xyz.tracel.imtrack.ui.theme.ImtrackTheme
 import java.time.LocalDate
 
@@ -62,26 +64,29 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltVie
     LaunchedEffect(viewModel) {
         viewModel.messages.collect { message ->
             val text = when (message) {
-                is HomeMessage.Logged -> {
-                    val duration = formatDuration(message.durationSeconds)
-                    when (message.day) {
-                        DayLabel.Today -> context.getString(R.string.logged_snackbar, duration, message.projectName)
-                        else -> context.getString(
-                            R.string.logged_snackbar_dated,
-                            duration,
-                            message.projectName,
-                            message.day.text(context.resources),
-                        )
-                    }
-                }
+                is HomeMessage.Logged ->
+                    loggedText(context.resources, message.durationSeconds, message.projectName, message.day)
+                is HomeMessage.Switched ->
+                    context.getString(R.string.switched_snackbar, message.stoppedName, message.startedName)
             }
             snackbarHostState.showSnackbar(text)
         }
     }
 
+    val underAMinute by viewModel.underAMinute.collectAsStateWithLifecycle()
     Box(modifier) {
-        HomeScreen(uiState = uiState, onAddProject = viewModel::addProject, onLog = viewModel::openLog)
+        HomeScreen(
+            uiState = uiState,
+            onAddProject = viewModel::addProject,
+            onLog = viewModel::openLog,
+            onStart = viewModel::start,
+            onStop = viewModel::stop,
+            now = viewModel::nowMillis,
+        )
         SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
+    }
+    underAMinute?.let {
+        UnderAMinuteDialog(it, onKeep = viewModel::keepUnderAMinute, onDiscard = viewModel::discardUnderAMinute)
     }
     (uiState as? HomeUiState.Projects)?.let { state ->
         state.logSheet?.let { project ->
@@ -95,12 +100,15 @@ fun HomeScreen(
     uiState: HomeUiState,
     onAddProject: (name: String, color: Int) -> Unit,
     onLog: (Project) -> Unit,
+    onStart: (Project) -> Unit,
+    onStop: () -> Unit,
+    now: () -> Long,
     modifier: Modifier = Modifier,
 ) {
     when (uiState) {
         HomeUiState.Loading -> Unit
         is HomeUiState.Empty -> HomeEmptyState(uiState, onAddProject, modifier)
-        is HomeUiState.Projects -> HomeProjects(uiState, onLog, modifier)
+        is HomeUiState.Projects -> HomeProjects(uiState, onLog, onStart, onStop, now, modifier)
     }
 }
 
@@ -142,9 +150,16 @@ private fun HomeEmptyState(
     }
 }
 
-/** The normal Home: the summary tiles, then one row per active Project. */
+/** The normal Home: the summary tiles, the running card if a Stopwatch runs, then one row per active Project. */
 @Composable
-private fun HomeProjects(state: HomeUiState.Projects, onLog: (Project) -> Unit, modifier: Modifier = Modifier) {
+private fun HomeProjects(
+    state: HomeUiState.Projects,
+    onLog: (Project) -> Unit,
+    onStart: (Project) -> Unit,
+    onStop: () -> Unit,
+    now: () -> Long,
+    modifier: Modifier = Modifier,
+) {
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
         item(key = "summary") {
             Row(
@@ -160,6 +175,20 @@ private fun HomeProjects(state: HomeUiState.Projects, onLog: (Project) -> Unit, 
                 Spacer(Modifier.weight(1f))
             }
         }
+        state.running?.let { running ->
+            item(key = "running") {
+                RunningStopwatchCard(
+                    project = running.project,
+                    startedAt = running.startedAt,
+                    now = now,
+                    onStop = onStop,
+                    modifier = Modifier
+                        .animateItem()
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                )
+            }
+        }
         item(key = "section") {
             Text(
                 stringResource(R.string.home_projects_section),
@@ -169,7 +198,7 @@ private fun HomeProjects(state: HomeUiState.Projects, onLog: (Project) -> Unit, 
             )
         }
         items(state.rows, key = { it.project.id }) { row ->
-            HomeProjectRow(row, onLog, Modifier.animateItem())
+            HomeProjectRow(row, onLog, onStart, onStop, Modifier.animateItem())
         }
     }
 }
@@ -193,7 +222,13 @@ private fun SummaryTile(label: String, value: String, modifier: Modifier = Modif
 }
 
 @Composable
-private fun HomeProjectRow(row: HomeRow, onLog: (Project) -> Unit, modifier: Modifier = Modifier) {
+private fun HomeProjectRow(
+    row: HomeRow,
+    onLog: (Project) -> Unit,
+    onStart: (Project) -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val project = row.project
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -205,7 +240,11 @@ private fun HomeProjectRow(row: HomeRow, onLog: (Project) -> Unit, modifier: Mod
     ) {
         ProjectMarker(color = project.color, archived = false)
         Column(Modifier.weight(1f)) {
-            Text(project.name, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                project.name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (row.running) FontWeight.Medium else null,
+            )
             Text(
                 if (row.todaySeconds > 0) {
                     stringResource(R.string.home_today_subtitle, formatDuration(row.todaySeconds))
@@ -216,7 +255,15 @@ private fun HomeProjectRow(row: HomeRow, onLog: (Project) -> Unit, modifier: Mod
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        // The Stopwatch's ▶ button goes here (#11).
+        if (row.running) {
+            IconButton(onClick = onStop) {
+                Icon(painterResource(R.drawable.ic_stop), stringResource(R.string.stop_project, project.name))
+            }
+        } else {
+            IconButton(onClick = { onStart(project) }) {
+                Icon(painterResource(R.drawable.ic_play), stringResource(R.string.start_project, project.name))
+            }
+        }
         IconButton(onClick = { onLog(project) }) {
             Icon(painterResource(R.drawable.ic_add), stringResource(R.string.log_project, project.name))
         }
@@ -229,7 +276,7 @@ private fun HomeProjectRow(row: HomeRow, onLog: (Project) -> Unit, modifier: Mod
 private fun HomeFirstLaunchPreview() {
     ImtrackTheme {
         Surface {
-            HomeScreen(HomeUiState.Empty(EmptyKind.FirstLaunch, ProjectColors[0]), onAddProject = { _, _ -> }, onLog = {})
+            HomeScreen(HomeUiState.Empty(EmptyKind.FirstLaunch, ProjectColors[0]), onAddProject = { _, _ -> }, onLog = {}, onStart = {}, onStop = {}, now = { 0L })
         }
     }
 }
@@ -240,7 +287,7 @@ private fun HomeFirstLaunchPreview() {
 private fun HomeAllArchivedPreview() {
     ImtrackTheme {
         Surface {
-            HomeScreen(HomeUiState.Empty(EmptyKind.AllArchived, ProjectColors[5]), onAddProject = { _, _ -> }, onLog = {})
+            HomeScreen(HomeUiState.Empty(EmptyKind.AllArchived, ProjectColors[5]), onAddProject = { _, _ -> }, onLog = {}, onStart = {}, onStop = {}, now = { 0L })
         }
     }
 }
@@ -261,7 +308,29 @@ private fun HomePopulatedPreview() {
     )
     ImtrackTheme {
         Surface {
-            HomeScreen(state, onAddProject = { _, _ -> }, onLog = {})
+            HomeScreen(state, onAddProject = { _, _ -> }, onLog = {}, onStart = {}, onStop = {}, now = { 0L })
+        }
+    }
+}
+
+@Preview(name = "Stopwatch running", showBackground = true)
+@Preview(name = "Stopwatch running, dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun HomeRunningPreview() {
+    val rows = listOf("Guitar" to 1_800L, "Reading" to 0L)
+        .mapIndexed { index, (name, todaySeconds) ->
+            val project = Project(name, name, ProjectColors[index + 2], false, createdAt = 0L, updatedAt = 0L, deletedAt = null)
+            HomeRow(project, todaySeconds, running = index == 0)
+        }
+    val state = HomeUiState.Projects(
+        today = LocalDate.of(2026, 10, 4),
+        todaySeconds = 1_800L,
+        rows = rows,
+        running = RunningCard(rows.first().project, startedAt = 0L),
+    )
+    ImtrackTheme {
+        Surface {
+            HomeScreen(state, onAddProject = { _, _ -> }, onLog = {}, onStart = {}, onStop = {}, now = { 754_000L })
         }
     }
 }

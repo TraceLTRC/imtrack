@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import xyz.tracel.imtrack.data.AppDatabase
 import xyz.tracel.imtrack.data.ProjectDao
+import xyz.tracel.imtrack.data.RunningStopwatchDao
 import xyz.tracel.imtrack.data.SessionDao
 import javax.inject.Singleton
 
@@ -25,4 +26,7 @@ object DatabaseModule {
 
     @Provides
     fun provideSessionDao(database: AppDatabase): SessionDao = database.sessionDao()
+
+    @Provides
+    fun provideRunningStopwatchDao(database: AppDatabase): RunningStopwatchDao = database.runningStopwatchDao()
 }

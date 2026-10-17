@@ -28,6 +28,7 @@ import xyz.tracel.imtrack.data.AppDatabase
 import xyz.tracel.imtrack.data.LastCreatedSession
 import xyz.tracel.imtrack.data.ProjectRepository
 import xyz.tracel.imtrack.data.SessionRepository
+import xyz.tracel.imtrack.data.StopwatchRepository
 import java.time.Instant
 import java.time.LocalDate
 
@@ -43,6 +44,7 @@ class SettingsViewModelTest {
     private lateinit var projects: ProjectRepository
     private lateinit var sessions: SessionRepository
     private lateinit var backups: BackupRepository
+    private lateinit var stopwatch: StopwatchRepository
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -56,7 +58,8 @@ class SettingsViewModelTest {
         projects = ProjectRepository(db.projectDao(), clock)
         sessions = SessionRepository(db.sessionDao(), clock, lastCreated)
         backups = BackupRepository(db, clock, lastCreated)
-        viewModel = SettingsViewModel(backups, BackupFiles(ApplicationProvider.getApplicationContext()), clock)
+        stopwatch = StopwatchRepository(db, db.runningStopwatchDao(), sessions, clock)
+        viewModel = SettingsViewModel(backups, stopwatch, BackupFiles(ApplicationProvider.getApplicationContext()), clock)
     }
 
     @After
@@ -128,5 +131,28 @@ class SettingsViewModelTest {
 
         val message = viewModel.messages.first() as SettingsMessage.ImportFailed
         assertTrue(message.error is BackupError.Failed)
+    }
+
+    @Test
+    fun importingWhileAStopwatchRunsWarnsAndStopsItWithoutSaving() = runTest {
+        val file = folder.newFile("guitar.json")
+        file.writeText(
+            """{"formatVersion": 1, "exportedAt": 1, "projects": [{"id": "g", "name": "Guitar", "color": 1,
+            "archived": false, "createdAt": 1, "updatedAt": 1, "deletedAt": null}], "sessions": []}""",
+        )
+        projects.create("Reading", 2)
+        stopwatch.start(projects.observeAll().first().single().id)
+        clock.millis += 600_000L
+
+        viewModel.import(Uri.fromFile(file))
+        assertEquals(
+            ImportConfirm(projectCount = 1, sessionCount = 0, stopwatchRunning = true),
+            viewModel.importConfirm.first { it != null },
+        )
+        viewModel.confirmImport()
+
+        assertEquals(SettingsMessage.Imported(1, 0), viewModel.messages.first())
+        assertNull(stopwatch.observeRunning().first())
+        assertEquals(emptyList<Any>(), sessions.observeLive().first())
     }
 }

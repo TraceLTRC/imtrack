@@ -18,13 +18,17 @@ import xyz.tracel.imtrack.backup.BackupError
 import xyz.tracel.imtrack.backup.BackupFiles
 import xyz.tracel.imtrack.backup.BackupFormat
 import xyz.tracel.imtrack.backup.BackupRepository
+import xyz.tracel.imtrack.data.StopwatchRepository
 import java.io.IOException
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 
-/** A valid backup waiting for the `Replace all data?` dialog. Counts leave out soft-deleted rows. */
-data class ImportConfirm(val projectCount: Int, val sessionCount: Int)
+/**
+ * A valid backup waiting for the `Replace all data?` dialog. Counts leave out soft-deleted rows.
+ * [stopwatchRunning] adds the warning that the running Stopwatch stops without saving.
+ */
+data class ImportConfirm(val projectCount: Int, val sessionCount: Int, val stopwatchRunning: Boolean = false)
 
 /** Snackbar confirmations; the screen turns them into copy. */
 sealed interface SettingsMessage {
@@ -37,6 +41,7 @@ sealed interface SettingsMessage {
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val backupRepository: BackupRepository,
+    private val stopwatchRepository: StopwatchRepository,
     private val files: BackupFiles,
     private val clock: Clock,
 ) : ViewModel() {
@@ -81,7 +86,11 @@ class SettingsViewModel @Inject constructor(
                 is BackupDecoding.Invalid -> _messages.send(SettingsMessage.ImportFailed(decoding.error))
                 is BackupDecoding.Valid -> {
                     pendingImport = decoding.backup
-                    _importConfirm.value = ImportConfirm(decoding.backup.liveProjectCount, decoding.backup.liveSessionCount)
+                    _importConfirm.value = ImportConfirm(
+                        projectCount = decoding.backup.liveProjectCount,
+                        sessionCount = decoding.backup.liveSessionCount,
+                        stopwatchRunning = stopwatchRepository.getRunning() != null,
+                    )
                 }
             }
         }
@@ -92,12 +101,11 @@ class SettingsViewModel @Inject constructor(
         _importConfirm.value = null
     }
 
-    /** Replace in the confirm dialog: swaps every row for the file's. */
+    /** Replace in the confirm dialog: swaps every row for the file's and stops a running Stopwatch without saving. */
     fun confirmImport() {
         val backup = pendingImport ?: return
         cancelImport()
         viewModelScope.launch {
-            // The Stopwatch (#11) must stop here without saving.
             val message = try {
                 backupRepository.replaceAll(backup)
                 SettingsMessage.Imported(backup.liveProjectCount, backup.liveSessionCount)

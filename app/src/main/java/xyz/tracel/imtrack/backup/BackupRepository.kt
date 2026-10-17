@@ -23,10 +23,12 @@ class BackupRepository @Inject constructor(
 
     /**
      * Import: in one transaction, hard-deletes every row and inserts the backup's rows unchanged,
-     * keeping their IDs and timestamps. Also clears the Undo last Session target.
+     * keeping their IDs and timestamps. Also stops a running Stopwatch without saving and clears the
+     * Undo last Session target.
      */
     suspend fun replaceAll(backup: Backup) {
         database.withTransaction {
+            database.runningStopwatchDao().delete()
             database.sessionDao().deleteAll()
             database.projectDao().deleteAll()
             database.projectDao().insertAll(backup.projects)

@@ -40,6 +40,19 @@
     <string name="home_nothing_today">Nothing today</string>
     <string name="log_project">Log %1$s</string>
 
+    <!-- Stopwatch -->
+    <string name="start_project">Start %1$s</string>
+    <string name="stop_project">Stop %1$s</string>
+    <string name="stop">Stop</string>
+    <string name="switched_snackbar">Stopped %1$s, started %2$s</string>
+    <string name="under_a_minute_title">Under a minute</string>
+    <plurals name="under_a_minute_text">
+        <item quantity="one">The Stopwatch ran for %1$d second on %2$s. Keep it as a Session?</item>
+        <item quantity="other">The Stopwatch ran for %1$d seconds on %2$s. Keep it as a Session?</item>
+    </plurals>
+    <string name="discard">Discard</string>
+    <string name="keep">Keep</string>
+
     <!-- Sessions -->
     <string name="day_today">Today</string>
     <string name="day_yesterday">Yesterday</string>
@@ -80,6 +93,7 @@
     <string name="import_failed_snackbar">Import failed: %1$s</string>
     <string name="replace_all_title">Replace all data?</string>
     <string name="replace_all_text">This deletes every Project and Session on this phone and replaces them with the %1$s and %2$s in the file.</string>
+    <string name="replace_all_text_running">This deletes every Project and Session on this phone and replaces them with the %1$s and %2$s in the file. The running Stopwatch will be stopped without saving.</string>
     <string name="replace">Replace</string>
     <string name="backup_error_unwritable">the file couldn\'t be written</string>
     <string name="backup_error_failed">something went wrong</string>

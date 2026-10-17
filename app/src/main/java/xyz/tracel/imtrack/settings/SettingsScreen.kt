@@ -124,10 +124,7 @@ private fun SettingsRow(@StringRes headline: Int, @StringRes supporting: Int, on
     )
 }
 
-/**
- * Import's confirm step; the data only changes on Replace.
- * The Stopwatch slice (#11) adds `The running Stopwatch will be stopped without saving.` when one runs.
- */
+/** Import's confirm step; the data only changes on Replace. */
 @Composable
 fun ReplaceAllDialog(confirm: ImportConfirm, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
@@ -136,7 +133,7 @@ fun ReplaceAllDialog(confirm: ImportConfirm, onConfirm: () -> Unit, onDismiss: (
         text = {
             Text(
                 stringResource(
-                    R.string.replace_all_text,
+                    if (confirm.stopwatchRunning) R.string.replace_all_text_running else R.string.replace_all_text,
                     pluralStringResource(R.plurals.project_count, confirm.projectCount, confirm.projectCount),
                     pluralStringResource(R.plurals.session_count, confirm.sessionCount, confirm.sessionCount),
                 ),
@@ -199,6 +196,20 @@ private fun ReplaceAllDialogPreview() {
     ImtrackTheme {
         Surface {
             ReplaceAllDialog(ImportConfirm(projectCount = 4, sessionCount = 120), onConfirm = {}, onDismiss = {})
+        }
+    }
+}
+
+@Preview(name = "Replace all data, Stopwatch running", showBackground = true)
+@Composable
+private fun ReplaceAllDialogRunningPreview() {
+    ImtrackTheme {
+        Surface {
+            ReplaceAllDialog(
+                ImportConfirm(projectCount = 4, sessionCount = 120, stopwatchRunning = true),
+                onConfirm = {},
+                onDismiss = {},
+            )
         }
     }
 }

@@ -26,8 +26,11 @@ import org.robolectric.RobolectricTestRunner
 import xyz.tracel.imtrack.MutableClock
 import xyz.tracel.imtrack.data.AppDatabase
 import xyz.tracel.imtrack.data.LastCreatedSession
+import xyz.tracel.imtrack.data.Project
 import xyz.tracel.imtrack.data.ProjectRepository
 import xyz.tracel.imtrack.data.SessionRepository
+import xyz.tracel.imtrack.data.StopwatchRepository
+import xyz.tracel.imtrack.stopwatch.InAppStopwatch
 import xyz.tracel.imtrack.projects.ProjectColors
 import xyz.tracel.imtrack.sessions.DayLabel
 import java.time.Instant
@@ -43,6 +46,7 @@ class HomeViewModelTest {
     private lateinit var db: AppDatabase
     private lateinit var projects: ProjectRepository
     private lateinit var sessions: SessionRepository
+    private lateinit var stopwatch: StopwatchRepository
     private lateinit var viewModel: HomeViewModel
 
     @Before
@@ -54,7 +58,8 @@ class HomeViewModelTest {
         ).allowMainThreadQueries().build()
         projects = ProjectRepository(db.projectDao(), clock)
         sessions = SessionRepository(db.sessionDao(), clock, LastCreatedSession())
-        viewModel = HomeViewModel(projects, sessions, clock, Random(0))
+        stopwatch = StopwatchRepository(db, db.runningStopwatchDao(), sessions, clock)
+        viewModel = newViewModel()
     }
 
     @After
@@ -198,6 +203,167 @@ class HomeViewModelTest {
 
         projectsState { it.logSheet == null }
         assertEquals(emptyList<Any>(), sessions.observeLatestPerProject().first())
+    }
+
+    @Test
+    fun startingShowsTheRunningCardAndMarksTheRow() = runTest {
+        collectState()
+        val (guitar, _) = twoProjects()
+
+        viewModel.start(guitar)
+
+        val state = projectsState { it.running != null }
+        assertEquals(RunningCard(guitar, startedAt = clock.millis), state.running)
+        assertEquals(mapOf("Guitar" to true, "Reading" to false), state.rows.associate { it.project.name to it.running })
+    }
+
+    @Test
+    fun aRunningStopwatchSurvivesARestart() = runTest {
+        val (guitar, _) = twoProjects()
+        stopwatch.start(guitar.id)
+
+        viewModel = newViewModel()
+        collectState()
+
+        assertEquals(guitar, projectsState { it.running != null }.running?.project)
+    }
+
+    @Test
+    fun stoppingAfterAMinuteSavesTheRealSecondsDatedTheStartDay() = runTest {
+        collectState()
+        val (guitar, _) = twoProjects()
+        clock.millis = Instant.parse("2026-10-04T23:40:00Z").toEpochMilli()
+        viewModel.start(guitar)
+        projectsState { it.running != null }
+        clock.millis += 1_925_000L
+
+        viewModel.stop()
+
+        projectsState { it.running == null }
+        assertEquals(HomeMessage.Logged(1_925L, "Guitar", DayLabel.Yesterday), viewModel.messages.first())
+        assertEquals(mapOf(guitar.id to 1_925L), sessions.observeTotalsOn(today).first())
+        assertNull(viewModel.underAMinute.value)
+    }
+
+    @Test
+    fun stoppingUnderAMinuteAsksAndKeepSavesTheRealSeconds() = runTest {
+        collectState()
+        val (guitar, _) = twoProjects()
+        viewModel.start(guitar)
+        projectsState { it.running != null }
+        clock.millis += 40_000L
+
+        viewModel.stop()
+
+        val asking = viewModel.underAMinute.first { it != null }!!
+        assertEquals(40L, asking.elapsedSeconds)
+        assertEquals("Guitar", asking.projectName)
+        // It keeps running until the answer, and the answer counts up to the tap on Stop.
+        assertEquals(guitar, viewModel.uiState.value.let { it as HomeUiState.Projects }.running?.project)
+        assertEquals(emptyMap<String, Long>(), sessions.observeTotalsOn(today).first())
+        clock.millis += 5_000L
+
+        viewModel.keepUnderAMinute()
+
+        assertEquals(HomeMessage.Logged(40L, "Guitar", DayLabel.Today), viewModel.messages.first())
+        assertEquals(mapOf(guitar.id to 40L), sessions.observeTotalsOn(today).first())
+        assertNull(viewModel.underAMinute.value)
+        projectsState { it.running == null }
+    }
+
+    @Test
+    fun discardingUnderAMinuteSavesNothing() = runTest {
+        collectState()
+        val messages = collectMessages()
+        val (guitar, _) = twoProjects()
+        viewModel.start(guitar)
+        projectsState { it.running != null }
+        clock.millis += 40_000L
+        viewModel.stop()
+        viewModel.underAMinute.first { it != null }
+
+        viewModel.discardUnderAMinute()
+
+        projectsState { it.running == null }
+        assertNull(viewModel.underAMinute.value)
+        assertEquals(emptyMap<String, Long>(), sessions.observeTotalsOn(today).first())
+        assertEquals(emptyList<HomeMessage>(), messages)
+    }
+
+    @Test
+    fun startingAnotherProjectStopsTheRunningOne() = runTest {
+        collectState()
+        val (guitar, reading) = twoProjects()
+        viewModel.start(guitar)
+        projectsState { it.running?.project == guitar }
+        clock.millis += 120_000L
+
+        viewModel.start(reading)
+
+        assertEquals(reading, projectsState { it.running?.project == reading }.running?.project)
+        assertEquals(HomeMessage.Switched("Guitar", "Reading"), viewModel.messages.first())
+        assertEquals(mapOf(guitar.id to 120L), sessions.observeTotalsOn(today).first())
+    }
+
+    @Test
+    fun aSwitchUnderAMinuteStartsTheNewStopwatchAfterTheChoice() = runTest {
+        collectState()
+        val (guitar, reading) = twoProjects()
+        viewModel.start(guitar)
+        projectsState { it.running?.project == guitar }
+        clock.millis += 10_000L
+
+        viewModel.start(reading)
+        viewModel.underAMinute.first { it != null }
+        assertEquals(guitar, (viewModel.uiState.value as HomeUiState.Projects).running?.project)
+
+        viewModel.keepUnderAMinute()
+
+        assertEquals(reading, projectsState { it.running?.project == reading }.running?.project)
+        assertEquals(HomeMessage.Switched("Guitar", "Reading"), viewModel.messages.first())
+        assertEquals(mapOf(guitar.id to 10L), sessions.observeTotalsOn(today).first())
+    }
+
+    @Test
+    fun aSwitchUnderAMinuteThenDiscardStillStartsTheNewStopwatch() = runTest {
+        collectState()
+        val (guitar, reading) = twoProjects()
+        viewModel.start(guitar)
+        projectsState { it.running?.project == guitar }
+        viewModel.start(reading)
+        viewModel.underAMinute.first { it != null }
+
+        viewModel.discardUnderAMinute()
+
+        assertEquals(reading, projectsState { it.running?.project == reading }.running?.project)
+        assertEquals(HomeMessage.Switched("Guitar", "Reading"), viewModel.messages.first())
+        assertEquals(emptyMap<String, Long>(), sessions.observeTotalsOn(today).first())
+    }
+
+    @Test
+    fun startingTheRunningProjectAgainChangesNothing() = runTest {
+        collectState()
+        val (guitar, _) = twoProjects()
+        viewModel.start(guitar)
+        projectsState { it.running != null }
+        clock.millis += 10_000L
+
+        viewModel.start(guitar)
+
+        assertNull(viewModel.underAMinute.value)
+        assertEquals(RunningCard(guitar, startedAt = clock.millis - 10_000L), projectsState { it.running != null }.running)
+    }
+
+    private fun newViewModel() =
+        HomeViewModel(projects, sessions, stopwatch, InAppStopwatch(stopwatch, projects, clock), clock, Random(0))
+
+    /** Guitar and Reading, in that order. */
+    private suspend fun twoProjects(): Pair<Project, Project> {
+        projects.create(name = "Guitar", color = 0)
+        projects.create(name = "Reading", color = 0)
+        val (guitar, reading) = projects.observeAll().first { it.size == 2 }.sortedBy { it.name }
+        projectsState { it.rows.size == 2 }
+        return guitar to reading
     }
 
     /** Waits for a normal-Home state matching [predicate]: Room re-emits on its own threads. */
