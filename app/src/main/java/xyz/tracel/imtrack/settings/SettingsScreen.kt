@@ -77,8 +77,12 @@ fun SettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel:
         onPauseOrDispose {}
     }
 
+    val reminderAfterHours by viewModel.reminderAfterHours.collectAsStateWithLifecycle()
+
     SettingsScreen(
         notificationsOff = notificationsOff,
+        reminderAfterHours = reminderAfterHours,
+        onReminderAfterHoursChange = viewModel::setReminderAfterHours,
         onOpenNotificationSettings = {
             context.startActivity(
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
@@ -100,6 +104,8 @@ fun SettingsScreen(onBack: () -> Unit, modifier: Modifier = Modifier, viewModel:
 @Composable
 fun SettingsScreen(
     notificationsOff: Boolean,
+    reminderAfterHours: Int?,
+    onReminderAfterHoursChange: (Int) -> Unit,
     onOpenNotificationSettings: () -> Unit,
     onBack: () -> Unit,
     onExport: () -> Unit,
@@ -126,11 +132,12 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
-            // The Stopwatch section's `Reminder after` row joins this section in #16.
+            SectionLabel(R.string.settings_stopwatch_section)
             if (notificationsOff) {
-                SectionLabel(R.string.settings_stopwatch_section)
                 SettingsRow(R.string.settings_notifications_off, R.string.settings_notifications_off_text, onOpenNotificationSettings)
             }
+            // Null until the stored value has loaded.
+            reminderAfterHours?.let { ReminderAfterRow(it, onReminderAfterHoursChange) }
             SectionLabel(R.string.settings_backup_section)
             SettingsRow(R.string.settings_export, R.string.settings_export_text, onExport)
             SettingsRow(R.string.settings_import, R.string.settings_import_text, onImport)
@@ -218,7 +225,15 @@ private fun BackupError.text(resources: Resources): String = when (this) {
 @Composable
 private fun SettingsScreenPreview() {
     ImtrackTheme {
-        SettingsScreen(notificationsOff = false, onOpenNotificationSettings = {}, onBack = {}, onExport = {}, onImport = {})
+        SettingsScreen(
+            notificationsOff = false,
+            reminderAfterHours = 4,
+            onReminderAfterHoursChange = {},
+            onOpenNotificationSettings = {},
+            onBack = {},
+            onExport = {},
+            onImport = {},
+        )
     }
 }
 
@@ -227,7 +242,15 @@ private fun SettingsScreenPreview() {
 @Composable
 private fun SettingsNotificationsOffPreview() {
     ImtrackTheme {
-        SettingsScreen(notificationsOff = true, onOpenNotificationSettings = {}, onBack = {}, onExport = {}, onImport = {})
+        SettingsScreen(
+            notificationsOff = true,
+            reminderAfterHours = 4,
+            onReminderAfterHoursChange = {},
+            onOpenNotificationSettings = {},
+            onBack = {},
+            onExport = {},
+            onImport = {},
+        )
     }
 }
 

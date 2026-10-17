@@ -10,8 +10,9 @@ import xyz.tracel.imtrack.di.ApplicationScope
 import javax.inject.Inject
 
 /**
- * The Stopwatch notification's Stop action and delete intent, plus BOOT_COMPLETED and app updates,
- * which clear notifications. Works with the app closed.
+ * The Stopwatch notification's Stop action and delete intent, the Reminder's Stop and Keep running,
+ * the Reminder's alarm, plus BOOT_COMPLETED and app updates, which clear notifications and alarms.
+ * Works with the app closed.
  */
 @AndroidEntryPoint
 class StopwatchReceiver : BroadcastReceiver() {
@@ -22,7 +23,11 @@ class StopwatchReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val work: suspend () -> Unit = when (intent.action) {
             ActionStop -> notifier::stopFromNotification
-            Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED -> notifier::reconcile
+            ActionKeepRunning -> {
+                notifier.dismissReminder()
+                return
+            }
+            ActionReminderDue, Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED -> notifier::reconcile
             else -> return
         }
         val pending = goAsync()
@@ -37,5 +42,7 @@ class StopwatchReceiver : BroadcastReceiver() {
 
     companion object {
         const val ActionStop = "xyz.tracel.imtrack.action.STOP_STOPWATCH"
+        const val ActionKeepRunning = "xyz.tracel.imtrack.action.KEEP_RUNNING"
+        const val ActionReminderDue = "xyz.tracel.imtrack.action.REMINDER_DUE"
     }
 }

@@ -5,12 +5,15 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import xyz.tracel.imtrack.backup.Backup
 import xyz.tracel.imtrack.backup.BackupDecoding
@@ -19,6 +22,7 @@ import xyz.tracel.imtrack.backup.BackupFiles
 import xyz.tracel.imtrack.backup.BackupFormat
 import xyz.tracel.imtrack.backup.BackupRepository
 import xyz.tracel.imtrack.data.StopwatchRepository
+import xyz.tracel.imtrack.di.ApplicationScope
 import java.io.IOException
 import java.time.Clock
 import java.time.LocalDate
@@ -42,6 +46,8 @@ sealed interface SettingsMessage {
 class SettingsViewModel @Inject constructor(
     private val backupRepository: BackupRepository,
     private val stopwatchRepository: StopwatchRepository,
+    private val reminderSettings: ReminderSettings,
+    @param:ApplicationScope private val applicationScope: CoroutineScope,
     private val files: BackupFiles,
     private val clock: Clock,
 ) : ViewModel() {
@@ -50,6 +56,18 @@ class SettingsViewModel @Inject constructor(
     val importConfirm: StateFlow<ImportConfirm?> = _importConfirm.asStateFlow()
     private val _messages = Channel<SettingsMessage>(Channel.BUFFERED)
     val messages: Flow<SettingsMessage> = _messages.receiveAsFlow()
+
+    /** **Reminder after**, in hours; null until it has loaded. */
+    val reminderAfterHours: StateFlow<Int?> = reminderSettings.reminderAfterHours
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /**
+     * Values under one hour are ignored. Saved on the application scope: the field also saves as the page
+     * closes, when this ViewModel's scope may already be cancelled.
+     */
+    fun setReminderAfterHours(hours: Int) {
+        applicationScope.launch { reminderSettings.setReminderAfterHours(hours) }
+    }
 
     /** The name the "create document" picker suggests, such as `imtrack-backup-2026-10-04.json`. */
     fun exportFileName(): String = "imtrack-backup-${LocalDate.now(clock)}.json"

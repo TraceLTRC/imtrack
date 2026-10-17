@@ -29,6 +29,11 @@ class StopwatchRepository @Inject constructor(
     suspend fun start(projectId: String): Boolean =
         dao.insert(RunningStopwatch(projectId, startedAt = clock.millis(), startDate = LocalDate.now(clock))) != -1L
 
+    /** The Reminder is shown once per run. */
+    suspend fun markReminderShown() {
+        dao.markReminderShown()
+    }
+
     /** Whole seconds since [running] started, never below zero (the clock may be moved back). */
     fun elapsedSeconds(running: RunningStopwatch): Long = elapsedSeconds(running.startedAt, clock.millis())
 

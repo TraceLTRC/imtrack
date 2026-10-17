@@ -18,6 +18,10 @@ interface RunningStopwatchDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(running: RunningStopwatch): Long
 
+    /** Marks this run's Reminder as shown; does nothing when nothing is running. */
+    @Query("UPDATE running_stopwatch SET reminderShown = 1")
+    suspend fun markReminderShown()
+
     /** Returns how many rows went: 0 when nothing was running. */
     @Query("DELETE FROM running_stopwatch")
     suspend fun delete(): Int

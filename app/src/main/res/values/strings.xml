@@ -53,6 +53,10 @@
     <string name="discard">Discard</string>
     <string name="keep">Keep</string>
     <string name="stopwatch_channel">Stopwatch</string>
+    <string name="reminder_channel">Reminder</string>
+    <string name="reminder_title">Still on %1$s?</string>
+    <string name="reminder_text">The Stopwatch has been running for %1$d h.</string>
+    <string name="keep_running">Keep running</string>
 
     <!-- Sessions -->
     <string name="day_today">Today</string>
@@ -78,6 +82,9 @@
     <string name="settings_stopwatch_section">Stopwatch</string>
     <string name="settings_notifications_off">Notifications are off</string>
     <string name="settings_notifications_off_text">The Stopwatch notification and Reminder need them</string>
+    <string name="settings_reminder_after">Reminder after</string>
+    <string name="settings_reminder_after_text">Notifies you when a Stopwatch has run this long. It keeps running.</string>
+    <string name="hours_suffix">h</string>
     <string name="settings_backup_section">Backup</string>
     <string name="settings_export">Export</string>
     <string name="settings_export_text">Save all Projects and Sessions to a JSON file</string>

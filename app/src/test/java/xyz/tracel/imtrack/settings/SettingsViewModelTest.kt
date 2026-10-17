@@ -3,9 +3,14 @@ package xyz.tracel.imtrack.settings
 import android.net.Uri
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -36,6 +41,7 @@ import java.time.LocalDate
 @RunWith(RobolectricTestRunner::class)
 class SettingsViewModelTest {
     @get:Rule val folder = TemporaryFolder()
+    private val dataStoreScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /** Midday on Sun 4 Oct 2026, UTC. */
     private val clock = MutableClock(Instant.parse("2026-10-04T12:00:00Z").toEpochMilli())
@@ -59,11 +65,15 @@ class SettingsViewModelTest {
         sessions = SessionRepository(db.sessionDao(), clock, lastCreated)
         backups = BackupRepository(db, clock, lastCreated)
         stopwatch = StopwatchRepository(db, db.runningStopwatchDao(), sessions, clock)
-        viewModel = SettingsViewModel(backups, stopwatch, BackupFiles(ApplicationProvider.getApplicationContext()), clock)
+        val reminder = ReminderSettings(
+            PreferenceDataStoreFactory.create(scope = dataStoreScope) { folder.root.resolve("s.preferences_pb") },
+        )
+        viewModel = SettingsViewModel(backups, stopwatch, reminder, dataStoreScope, BackupFiles(ApplicationProvider.getApplicationContext()), clock)
     }
 
     @After
     fun tearDown() {
+        dataStoreScope.cancel()
         db.close()
         Dispatchers.resetMain()
     }
@@ -154,5 +164,16 @@ class SettingsViewModelTest {
         assertEquals(SettingsMessage.Imported(1, 0), viewModel.messages.first())
         assertNull(stopwatch.observeRunning().first())
         assertEquals(emptyList<Any>(), sessions.observeLive().first())
+    }
+
+    @Test
+    fun reminderAfterDefaultsToFourAndIgnoresValuesUnderOne() = runTest {
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.reminderAfterHours.collect {} }
+        assertEquals(4, viewModel.reminderAfterHours.first { it != null })
+
+        viewModel.setReminderAfterHours(0)
+        viewModel.setReminderAfterHours(6)
+
+        assertEquals(6, viewModel.reminderAfterHours.first { it == 6 })
     }
 }
