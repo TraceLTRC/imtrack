@@ -97,6 +97,11 @@
     <string name="stats_streak">Streak</string>
     <string name="stats_longest">Longest</string>
     <string name="by_project">By Project</string>
+    <string name="heatmap_title">Last 6 months</string>
+    <string name="heatmap_description">Heatmap of the last 6 months</string>
+    <string name="heatmap_description_filtered">Heatmap of the last 6 months for %1$s</string>
+    <string name="heatmap_legend_less">&lt;30 min</string>
+    <string name="heatmap_legend_more">2 h+</string>
 
     <!-- Settings -->
     <string name="settings_stopwatch_section">Stopwatch</string>

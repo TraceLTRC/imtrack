@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import xyz.tracel.imtrack.data.Project
 import xyz.tracel.imtrack.data.ProjectRepository
@@ -26,6 +28,9 @@ data class Comparison(val previousSeconds: Long, val previousLabel: PeriodLabel)
 /** A By Project row: a Project with time in the Period so far. */
 data class ByProjectRow(val project: Project, val seconds: Long)
 
+/** The Heatmap: its grid and each day's total seconds, for [projectId] (null: All Projects). */
+data class HeatmapDays(val layout: HeatmapLayout, val seconds: Map<LocalDate, Long>, val projectId: String? = null)
+
 /**
  * The Stats tab. [selected] is the Project filter (null: All Projects); [streak] and [byProject] are
  * only there for All Projects. [projects] is the chip order: active A–Z, then archived A–Z.
@@ -38,6 +43,7 @@ data class StatsUiState(
     val comparison: Comparison?,
     val streak: Streak?,
     val byProject: List<ByProjectRow>,
+    val heatmap: HeatmapDays,
 )
 
 /** One Period's totals so far and the previous one's at the same point, by Project ID. */
@@ -61,7 +67,9 @@ class StatsViewModel @Inject constructor(
     private val period = savedStateHandle.getStateFlow(KeyPeriod, PeriodKind.Week)
     private val selectedId = savedStateHandle.getStateFlow<String?>(KeyProject, null)
 
-    private val totals = combine(todayFlow(clock).distinctUntilChanged(), period) { today, period -> today to period }
+    private val today = todayFlow(clock).distinctUntilChanged()
+
+    private val totals = combine(today, period) { today, period -> today to period }
         .flatMapLatest { (today, period) ->
             val soFar = period.soFar(today)
             combine(
@@ -70,12 +78,22 @@ class StatsViewModel @Inject constructor(
             ) { current, previous -> PeriodTotals(today, period, current, previous) }
         }
 
+    private val heatmap = combine(today, selectedId) { today, selectedId -> today to selectedId }
+        .flatMapLatest { (today, selectedId) ->
+            val layout = heatmapLayout(today)
+            sessionRepository.observeDayTotalsBetween(layout.range.start, layout.range.endInclusive, selectedId)
+                .map { HeatmapDays(layout, it, selectedId) }
+        }
+
     val uiState: StateFlow<StatsUiState?> = combine(
         totals,
         projectRepository.observeAll(),
         selectedId,
         streakRepository.observe(),
-    ) { totals, all, selectedId, streak ->
+        heatmap,
+    ) { totals, all, selectedId, streak, heatmap ->
+        // Just after the filter changes, the heatmap still has the old Project's days: wait for the new ones.
+        if (heatmap.projectId != selectedId) return@combine null
         // A Project that's gone (after an Import) falls back to All Projects, for good.
         val selected = all.find { it.id == selectedId }
         if (selectedId != null && selected == null) savedStateHandle[KeyProject] = null
@@ -95,8 +113,9 @@ class StatsViewModel @Inject constructor(
             },
             streak = streak.takeIf { selected == null },
             byProject = if (selected == null) byProject(totals.current, all) else emptyList(),
+            heatmap = heatmap,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    }.filterNotNull().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun selectPeriod(period: PeriodKind) {
         savedStateHandle[KeyPeriod] = period

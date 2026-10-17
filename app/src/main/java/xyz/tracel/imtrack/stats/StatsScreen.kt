@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -78,7 +79,7 @@ fun StatsScreen(
                 }
             }
         }
-        // The Heatmap card goes here (#19).
+        item(key = "heatmap") { HeatmapCard(state.heatmap, state.selected) }
     }
 }
 
@@ -232,7 +233,7 @@ fun ByProjectRows(rows: List<ByProjectRow>, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun StatsCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun StatsCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         shape = RoundedCornerShape(16.dp),
@@ -265,6 +266,7 @@ private val populated = StatsUiState(
         ByProjectRow(previewProjects[1], 2_700L),
         ByProjectRow(previewProjects[4], 600L),
     ),
+    heatmap = previewHeatmap(),
 )
 
 @Composable
@@ -276,8 +278,8 @@ private fun StatsPreview(state: StatsUiState) {
     }
 }
 
-@Preview(name = "Populated", showBackground = true, heightDp = 760)
-@Preview(name = "Populated, dark", showBackground = true, heightDp = 760, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Populated", showBackground = true, widthDp = 360, heightDp = 960)
+@Preview(name = "Populated, dark", showBackground = true, widthDp = 360, heightDp = 960, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun StatsPopulatedPreview() {
     StatsPreview(populated)
@@ -321,6 +323,7 @@ private fun StatsEmptyPreview() {
             comparison = null,
             streak = Streak(current = 0, longest = 0),
             byProject = emptyList(),
+            heatmap = previewHeatmap(empty = true),
         ),
     )
 }

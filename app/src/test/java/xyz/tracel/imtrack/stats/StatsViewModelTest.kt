@@ -190,6 +190,32 @@ class StatsViewModelTest {
     }
 
     @Test
+    fun theHeatmapCoversSixMonthsAndFollowsTheFilter() = runTest {
+        sampleWeek()
+        sessions.log(guitar.id, LocalDate.of(2026, 4, 12), 600L) // The day before the first column.
+        collectState()
+
+        val all = state { it.heatmap.seconds.isNotEmpty() }.heatmap
+        assertEquals(LocalDate.of(2026, 4, 13), all.layout.mondays.first())
+        assertEquals(
+            mapOf(
+                LocalDate.of(2026, 9, 28) to 3_600L,
+                LocalDate.of(2026, 10, 1) to 9_000L,
+                LocalDate.of(2026, 10, 5) to 1_800L,
+                today to 900L,
+            ),
+            all.seconds,
+        )
+
+        viewModel.selectProject(reading)
+
+        assertEquals(
+            mapOf(LocalDate.of(2026, 10, 1) to 9_000L, today to 600L),
+            state { it.selected == reading && it.heatmap.seconds[today] == 600L }.heatmap.seconds,
+        )
+    }
+
+    @Test
     fun deletedSessionsAreLeftOut() = runTest {
         sessions.log(guitar.id, today, 600L)
         sessions.delete(sessions.log(guitar.id, today, 6_000L))
