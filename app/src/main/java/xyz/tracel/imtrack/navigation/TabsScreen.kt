@@ -14,18 +14,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -35,14 +41,34 @@ import androidx.navigation.compose.rememberNavController
 import xyz.tracel.imtrack.R
 import xyz.tracel.imtrack.history.HistoryScreen
 import xyz.tracel.imtrack.home.HomeScreen
+import xyz.tracel.imtrack.sessions.formatDuration
 
 /**
  * Home, History and Stats with the top app bar (title and ⋮ menu) and the bottom bar.
  * The tab back stack is saved while Projects or Settings is open, so back returns to the same tab.
  */
 @Composable
-fun TabsScreen(onOpenProjects: () -> Unit, onOpenSettings: () -> Unit) {
+fun TabsScreen(
+    onOpenProjects: () -> Unit,
+    onOpenSettings: () -> Unit,
+    viewModel: TabsViewModel = hiltViewModel(),
+) {
     val navController = rememberNavController()
+    val canUndo by viewModel.canUndo.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.messages.collect { message ->
+            val text = when (message) {
+                is TabsMessage.Removed -> context.getString(
+                    R.string.removed_snackbar,
+                    formatDuration(message.durationSeconds),
+                    message.projectName,
+                )
+            }
+            snackbarHostState.showSnackbar(text)
+        }
+    }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentTab = Tab.entries.firstOrNull { tab ->
         backStackEntry?.destination?.hasRoute(tab.route::class) == true
@@ -52,6 +78,8 @@ fun TabsScreen(onOpenProjects: () -> Unit, onOpenSettings: () -> Unit) {
         topBar = {
             TabTopBar(
                 title = stringResource(currentTab.title),
+                canUndo = canUndo,
+                onUndoLastSession = viewModel::undoLastSession,
                 onOpenProjects = onOpenProjects,
                 onOpenSettings = onOpenSettings,
             )
@@ -74,6 +102,7 @@ fun TabsScreen(onOpenProjects: () -> Unit, onOpenSettings: () -> Unit) {
                 }
             }
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -95,7 +124,13 @@ fun TabsScreen(onOpenProjects: () -> Unit, onOpenSettings: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TabTopBar(title: String, onOpenProjects: () -> Unit, onOpenSettings: () -> Unit) {
+private fun TabTopBar(
+    title: String,
+    canUndo: Boolean,
+    onUndoLastSession: () -> Unit,
+    onOpenProjects: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     var menuOpen by remember { mutableStateOf(false) }
     TopAppBar(
         title = { Text(title) },
@@ -105,11 +140,13 @@ private fun TabTopBar(title: String, onOpenProjects: () -> Unit, onOpenSettings:
                     Icon(painterResource(R.drawable.ic_more_vert), stringResource(R.string.more_options))
                 }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    // Wired by the Undo last Session slice.
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.menu_undo_last_session)) },
-                        onClick = {},
-                        enabled = false,
+                        onClick = {
+                            menuOpen = false
+                            onUndoLastSession()
+                        },
+                        enabled = canUndo,
                     )
                     HorizontalDivider()
                     DropdownMenuItem(

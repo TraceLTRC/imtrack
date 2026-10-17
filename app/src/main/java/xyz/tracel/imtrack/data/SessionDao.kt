@@ -14,6 +14,13 @@ interface SessionDao {
     @Query("SELECT * FROM session WHERE id = :id")
     suspend fun getById(id: String): Session?
 
+    @Query("SELECT * FROM session WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getLiveById(id: String): Session?
+
+    /** The Session with [id] while it's live; null once it's deleted. */
+    @Query("SELECT * FROM session WHERE id = :id AND deletedAt IS NULL")
+    fun observeLiveById(id: String): Flow<Session?>
+
     /** Each Project's total seconds of live Sessions on [date]; Projects with none are left out. */
     @Query(
         """

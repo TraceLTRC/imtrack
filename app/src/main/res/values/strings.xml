@@ -12,6 +12,7 @@
     <string name="menu_settings">Settings</string>
     <string name="title_projects">Projects</string>
     <string name="title_settings">Settings</string>
+    <string name="removed_snackbar">Removed %1$s · %2$s</string>
     <string name="coming_soon">Coming in a later update.</string>
 
     <!-- Projects -->

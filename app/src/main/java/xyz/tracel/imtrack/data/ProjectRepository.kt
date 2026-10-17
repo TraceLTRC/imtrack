@@ -18,6 +18,8 @@ class ProjectRepository @Inject constructor(
     /** Active and archived Projects. */
     fun observeAll(): Flow<List<Project>> = projectDao.observeAll()
 
+    suspend fun get(id: String): Project? = projectDao.getById(id)
+
     suspend fun create(name: String, color: Int) {
         val now = clock.millis()
         projectDao.insert(

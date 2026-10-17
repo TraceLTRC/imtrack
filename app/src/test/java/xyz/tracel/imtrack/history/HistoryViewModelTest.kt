@@ -22,6 +22,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import xyz.tracel.imtrack.MutableClock
 import xyz.tracel.imtrack.data.AppDatabase
+import xyz.tracel.imtrack.data.LastCreatedSession
 import xyz.tracel.imtrack.data.Project
 import xyz.tracel.imtrack.data.ProjectRepository
 import xyz.tracel.imtrack.data.SessionRepository
@@ -47,7 +48,7 @@ class HistoryViewModelTest {
             AppDatabase::class.java,
         ).allowMainThreadQueries().build()
         projects = ProjectRepository(db.projectDao(), clock)
-        sessions = SessionRepository(db.sessionDao(), clock)
+        sessions = SessionRepository(db.sessionDao(), clock, LastCreatedSession())
         viewModel = HistoryViewModel(projects, sessions, clock)
     }
 

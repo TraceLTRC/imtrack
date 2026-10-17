@@ -25,6 +25,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import xyz.tracel.imtrack.MutableClock
 import xyz.tracel.imtrack.data.AppDatabase
+import xyz.tracel.imtrack.data.LastCreatedSession
 import xyz.tracel.imtrack.data.ProjectRepository
 import xyz.tracel.imtrack.data.SessionRepository
 import xyz.tracel.imtrack.projects.ProjectColors
@@ -52,7 +53,7 @@ class HomeViewModelTest {
             AppDatabase::class.java,
         ).allowMainThreadQueries().build()
         projects = ProjectRepository(db.projectDao(), clock)
-        sessions = SessionRepository(db.sessionDao(), clock)
+        sessions = SessionRepository(db.sessionDao(), clock, LastCreatedSession())
         viewModel = HomeViewModel(projects, sessions, clock, Random(0))
     }
 

@@ -10,6 +10,9 @@ interface ProjectDao {
     @Insert
     suspend fun insert(project: Project)
 
+    @Query("SELECT * FROM project WHERE id = :id")
+    suspend fun getById(id: String): Project?
+
     /** Projects that are neither archived nor deleted. */
     @Query("SELECT * FROM project WHERE archived = 0 AND deletedAt IS NULL")
     fun observeActive(): Flow<List<Project>>

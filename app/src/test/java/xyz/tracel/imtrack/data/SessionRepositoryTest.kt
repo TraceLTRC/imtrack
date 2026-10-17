@@ -29,7 +29,7 @@ class SessionRepositoryTest {
             ApplicationProvider.getApplicationContext(),
             AppDatabase::class.java,
         ).allowMainThreadQueries().build()
-        repository = SessionRepository(db.sessionDao(), clock)
+        repository = SessionRepository(db.sessionDao(), clock, LastCreatedSession())
         runTest {
             listOf("guitar", "reading").forEach {
                 db.projectDao().insert(Project(it, it, 0, archived = false, createdAt = 0L, updatedAt = 0L, deletedAt = null))
