@@ -76,6 +76,10 @@ class SessionRepository @Inject constructor(
     fun observeTotalsOn(date: LocalDate): Flow<Map<String, Long>> =
         sessionDao.observeTotalsOn(date).map { totals -> totals.associate { it.projectId to it.totalSeconds } }
 
+    /** Total seconds of live Sessions from [from] to [to] inclusive, by Project ID; archived Projects included. */
+    fun observeTotalsBetween(from: LocalDate, to: LocalDate): Flow<Map<String, Long>> =
+        sessionDao.observeTotalsBetween(from, to).map { totals -> totals.associate { it.projectId to it.totalSeconds } }
+
     /** Each Project's latest live Session, for Home's row order. */
     fun observeLatestPerProject(): Flow<List<ProjectActivity>> = sessionDao.observeLatestPerProject()
 }

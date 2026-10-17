@@ -42,6 +42,16 @@ interface SessionDao {
     )
     fun observeTotalsOn(date: LocalDate): Flow<List<ProjectTotal>>
 
+    /** Each Project's total seconds of live Sessions from [from] to [to], inclusive; Projects with none are left out. */
+    @Query(
+        """
+        SELECT projectId, SUM(durationSeconds) AS totalSeconds FROM session
+        WHERE date BETWEEN :from AND :to AND deletedAt IS NULL
+        GROUP BY projectId
+        """,
+    )
+    fun observeTotalsBetween(from: LocalDate, to: LocalDate): Flow<List<ProjectTotal>>
+
     /** Each Project's latest live Session; Projects with none are left out. */
     @Query(
         """
