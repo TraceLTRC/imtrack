@@ -14,10 +14,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZoneOffset
+import xyz.tracel.imtrack.MutableClock
 import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
@@ -111,11 +108,5 @@ class ProjectRepositoryTest {
         )
 
         assertEquals(setOf("Active", "Archived"), repository.observeAll().first().map { it.name }.toSet())
-    }
-
-    private class MutableClock(var millis: Long) : Clock() {
-        override fun getZone(): ZoneId = ZoneOffset.UTC
-        override fun withZone(zone: ZoneId?): Clock = this
-        override fun instant(): Instant = Instant.ofEpochMilli(millis)
     }
 }
