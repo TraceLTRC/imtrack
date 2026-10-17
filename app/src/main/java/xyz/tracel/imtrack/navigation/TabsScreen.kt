@@ -33,6 +33,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import xyz.tracel.imtrack.R
+import xyz.tracel.imtrack.history.HistoryScreen
 import xyz.tracel.imtrack.home.HomeScreen
 
 /**
@@ -86,7 +87,7 @@ fun TabsScreen(onOpenProjects: () -> Unit, onOpenSettings: () -> Unit) {
                 .consumeWindowInsets(innerPadding),
         ) {
             composable<HomeRoute> { HomeScreen() }
-            composable<HistoryRoute> { ComingSoon() }
+            composable<HistoryRoute> { HistoryScreen() }
             composable<StatsRoute> { ComingSoon() }
         }
     }
@@ -131,7 +132,7 @@ private fun TabTopBar(title: String, onOpenProjects: () -> Unit, onOpenSettings:
     )
 }
 
-/** Stand-in for History and Stats until their slices land. */
+/** Stand-in for Stats until its slice lands. */
 @Composable
 private fun ComingSoon() {
     Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {

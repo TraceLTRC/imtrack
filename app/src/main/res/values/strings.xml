@@ -48,4 +48,14 @@
     <string name="pick_date">Pick…</string>
     <string name="logged_snackbar">Logged %1$s · %2$s</string>
     <string name="logged_snackbar_dated">Logged %1$s · %2$s · %3$s</string>
+
+    <!-- History -->
+    <string name="history_empty">No Sessions yet. Log one from Home.</string>
+    <string name="edit_session">Edit Session</string>
+    <string name="project">Project</string>
+    <string name="delete">Delete</string>
+    <string name="delete_session_title">Delete Session?</string>
+    <string name="delete_session_text">%1$s of %2$s on %3$s will be removed from History and stats.</string>
+    <string name="session_updated_snackbar">Session updated</string>
+    <string name="session_deleted_snackbar">Session deleted</string>
 </resources>

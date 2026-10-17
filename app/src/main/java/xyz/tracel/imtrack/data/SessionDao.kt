@@ -37,6 +37,23 @@ interface SessionDao {
         """,
     )
     fun observeLatestPerProject(): Flow<List<ProjectActivity>>
+
+    @Query("SELECT * FROM session WHERE deletedAt IS NULL")
+    fun observeLive(): Flow<List<Session>>
+
+    /** Edits a live Session; a deleted one stays as it was. */
+    @Query(
+        """
+        UPDATE session SET projectId = :projectId, date = :date, durationSeconds = :durationSeconds,
+            updatedAt = :updatedAt
+        WHERE id = :id AND deletedAt IS NULL
+        """,
+    )
+    suspend fun update(id: String, projectId: String, date: LocalDate, durationSeconds: Long, updatedAt: Long)
+
+    /** Soft delete (ADR-0002): the row stays, marked with [deletedAt]. */
+    @Query("UPDATE session SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :id")
+    suspend fun softDelete(id: String, deletedAt: Long)
 }
 
 data class ProjectTotal(val projectId: String, val totalSeconds: Long)

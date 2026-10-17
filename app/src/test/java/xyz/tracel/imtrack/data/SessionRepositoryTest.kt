@@ -93,4 +93,32 @@ class SessionRepositoryTest {
             repository.observeLatestPerProject().first().toSet(),
         )
     }
+
+    @Test
+    fun updateChangesProjectDateAndSecondsAndStampsUpdatedAt() = runTest {
+        val id = repository.log("guitar", oct4, 1_234L)
+        clock.millis = 2_000L
+
+        repository.update(id, projectId = "reading", date = oct3, durationSeconds = 600L)
+
+        assertEquals(
+            listOf(Session(id, "reading", oct3, 600L, createdAt = 1_000L, updatedAt = 2_000L, deletedAt = null)),
+            repository.observeLive().first(),
+        )
+    }
+
+    @Test
+    fun deleteHidesTheSessionButKeepsTheRowWithDeletedAt() = runTest {
+        val id = repository.log("guitar", oct4, 600L)
+        repository.log("reading", oct4, 60L)
+        clock.millis = 3_000L
+
+        repository.delete(id)
+
+        assertEquals(listOf("reading"), repository.observeLive().first().map { it.projectId })
+        assertEquals(mapOf("reading" to 60L), repository.observeTotalsOn(oct4).first())
+        val row = db.sessionDao().getById(id)!!
+        assertEquals(3_000L, row.deletedAt)
+        assertEquals(3_000L, row.updatedAt)
+    }
 }

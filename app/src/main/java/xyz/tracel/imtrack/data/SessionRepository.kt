@@ -31,6 +31,19 @@ class SessionRepository @Inject constructor(
         return id
     }
 
+    suspend fun update(id: String, projectId: String, date: LocalDate, durationSeconds: Long) {
+        require(durationSeconds > 0) { "A Session lasts more than zero seconds" }
+        sessionDao.update(id, projectId, date, durationSeconds, updatedAt = clock.millis())
+    }
+
+    /** Soft-deletes the Session: it vanishes from every screen and total, but its row stays (ADR-0002). */
+    suspend fun delete(id: String) {
+        sessionDao.softDelete(id, deletedAt = clock.millis())
+    }
+
+    /** Every live Session, in no particular order. */
+    fun observeLive(): Flow<List<Session>> = sessionDao.observeLive()
+
     /** Total seconds of live Sessions on [date], by Project ID. */
     fun observeTotalsOn(date: LocalDate): Flow<Map<String, Long>> =
         sessionDao.observeTotalsOn(date).map { totals -> totals.associate { it.projectId to it.totalSeconds } }
